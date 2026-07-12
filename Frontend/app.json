@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "091188f5-c692-471a-a2af-0823476cc05d"
+      }
+    },
+    "android": {
+      "package": "com.vapkotech.csnmobileapp"
+    },
+    "ios": {
+      "bundleIdentifier": "com.vapkotech.csnmobileapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "owner": "vapkotech",
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}

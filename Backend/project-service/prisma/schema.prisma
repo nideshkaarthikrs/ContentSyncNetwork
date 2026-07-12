@@ -1,0 +1,43 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id             String        @id @default(uuid())
+  sequenceNumber Int           @default(autoincrement())
+  projectName    String
+  ownerId        String
+  ownerUserId    String
+  status         ProjectStatus @default(ACTIVE)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  members        ProjectMember[]
+}
+
+model ProjectMember {
+  id            String       @id @default(uuid())
+  projectId     String
+  userDisplayId String
+  role          String
+  inviteStatus  InviteStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+  project       Project      @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, userDisplayId])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}

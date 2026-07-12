@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AssetType {
+  TUNE
+  SONG
+  VIDEO
+}
+
+enum LicenseType {
+  EXCLUSIVE
+  NON_EXCLUSIVE
+  PUBLIC
+}
+
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ClaimStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model RightsListing {
+  id             String        @id @default(uuid())
+  sequenceNumber Int           @default(autoincrement())
+  assetId        String
+  assetType      AssetType
+  ownerId        String
+  ownerUserId    String
+  licenseType    LicenseType
+  territory      String?
+  term           String?
+  price          Int
+  status         ListingStatus @default(AVAILABLE)
+  createdAt      DateTime      @default(now())
+
+  @@map("rights_listings")
+}
+
+model Purchase {
+  id             String         @id @default(uuid())
+  sequenceNumber Int            @default(autoincrement())
+  assetId        String
+  licenseType    String
+  buyerId        String
+  buyerUserId    String
+  status         PurchaseStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+
+  @@map("purchases")
+}
+
+model CopyrightClaim {
+  id             String      @id @default(uuid())
+  sequenceNumber Int         @default(autoincrement())
+  assetId        String
+  reason         String
+  claimantId     String
+  claimantUserId String
+  status         ClaimStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+
+  @@map("copyright_claims")
+}

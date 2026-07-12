@@ -1,0 +1,45 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model VideoProject {
+  id             String             @id @default(uuid())
+  sequenceNumber Int                @default(autoincrement())
+  songId         String
+  title          String
+  directorId     String
+  directorUserId String
+  status         VideoProjectStatus @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  videos         Video[]
+}
+
+model Video {
+  id             String      @id @default(uuid())
+  sequenceNumber Int         @default(autoincrement())
+  videoProjectId String?
+  uploaderId     String
+  uploaderUserId String
+  videoUrl       String
+  status         VideoStatus @default(UPLOADED)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  videoProject   VideoProject? @relation(fields: [videoProjectId], references: [id])
+}
+
+enum VideoProjectStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum VideoStatus {
+  UPLOADED
+  PROCESSING
+  PUBLISHED
+}

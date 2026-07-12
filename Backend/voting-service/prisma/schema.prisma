@@ -1,0 +1,20 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Vote {
+  id             String   @id @default(uuid())
+  sequenceNumber Int      @default(autoincrement())
+  voterId        String
+  voterUserId    String
+  entityType     String
+  entityId       String
+  createdAt      DateTime @default(now())
+
+  @@unique([voterId, entityId, entityType])
+}

@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_profile
+    ports:
+      - "5433:5432"
+    volumes:
+      - profile_pgdata:/var/lib/postgresql/data
+
+volumes:
+  profile_pgdata:

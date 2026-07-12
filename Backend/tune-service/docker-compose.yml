@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_tune
+    ports:
+      - "5434:5432"
+    volumes:
+      - tune_pgdata:/var/lib/postgresql/data
+
+volumes:
+  tune_pgdata:

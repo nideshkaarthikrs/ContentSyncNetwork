@@ -1,4 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { postInternal } from '../shared/internal-http.client';
 import { CreateTuneDto } from './dto/create-tune.dto';
 import { TuneRepository } from './tune.repository';
 
@@ -13,10 +15,19 @@ function parseDisplayId(tuneId: string): number {
 
 @Injectable()
 export class TuneService {
-  constructor(private readonly repo: TuneRepository) {}
+  constructor(
+    private readonly repo: TuneRepository,
+    private readonly config: ConfigService,
+  ) {}
 
   async create(ownerId: string, dto: CreateTuneDto, filename: string) {
     const tune = await this.repo.create(ownerId, dto, `/uploads/${filename}`);
+    postInternal(`${this.config.get<string>('feedService.url')}/internal/feed-items`, this.config.get<string>('internal.secret'), {
+      type: 'TUNE',
+      sourceId: toDisplayId(tune.sequenceNumber),
+      actorUserId: ownerId,
+      title: dto.title,
+    }).catch(() => {});
     return { tuneId: toDisplayId(tune.sequenceNumber), status: 'UPLOADED' };
   }
 
@@ -54,6 +65,19 @@ export class TuneService {
     }
     await this.repo.delete(tune.id);
     return { status: 'SUCCESS', message: 'Tune deleted' };
+  }
+
+  async getOwner(tuneId: string) {
+    const seq = parseDisplayId(tuneId);
+    const tune = await this.repo.findBySequenceNumber(seq);
+    if (!tune) {
+      throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-3001', message: 'Tune not found' });
+    }
+    return {
+      status: 'SUCCESS',
+      message: 'Owner retrieved',
+      data: { ownerUserId: tune.ownerId, title: tune.title },
+    };
   }
 
   async analyzeTune(tuneId: string, requesterId: string) {

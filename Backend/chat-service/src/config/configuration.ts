@@ -6,4 +6,10 @@ export default () => ({
   jwt: {
     secret: process.env.JWT_SECRET || 'change-me',
   },
+  internal: {
+    secret: process.env.INTERNAL_SERVICE_SECRET || 'change-me',
+  },
+  projectService: {
+    url: process.env.PROJECT_SERVICE_URL || 'http://localhost:3007',
+  },
 });

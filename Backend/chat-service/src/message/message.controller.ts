@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Request,
@@ -13,6 +15,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SendMessageDto } from './dto/send-message.dto';
 import { MessageService } from './message.service';
+import { clampPagination } from '../shared/pagination.helper';
 
 @Controller('projects')
 export class MessageController {
@@ -34,9 +37,11 @@ export class MessageController {
   @HttpCode(HttpStatus.OK)
   getHistory(
     @Param('projectId') projectId: string,
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '20',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Request() req,
   ) {
-    return this.messageService.getHistory(projectId, parseInt(page, 10), parseInt(pageSize, 10));
+    const clamped = clampPagination(page, pageSize);
+    return this.messageService.getHistory(projectId, req.user.id, req.user.userId, clamped.page, clamped.pageSize);
   }
 }

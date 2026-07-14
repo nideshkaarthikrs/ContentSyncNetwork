@@ -1,8 +1,8 @@
+import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import {
-  Feather,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
-import {
+  ActivityIndicator,
+  Alert,
   Image,
   SafeAreaView,
   ScrollView,
@@ -12,6 +12,11 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useProfile } from "../../hooks/profile/useProfile";
+import { useUploadPhoto } from "../../hooks/profile/useUploadPhoto";
+import { useAuthStore } from "../../store/authStore";
+
 interface Props {
   navigation: any;
 }
@@ -19,6 +24,37 @@ interface Props {
 export default function CreatorProfileScreen({
   navigation
 }: Props) {
+  const userId = useAuthStore((state) => state.user?.userId);
+  const { data: profile, isLoading } = useProfile(userId);
+  const uploadPhoto = useUploadPhoto(userId);
+
+  const handleChangePhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission needed", "Photo library permission is required to change your profile photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    try {
+      await uploadPhoto.mutateAsync({
+        uri: asset.uri,
+        name: asset.fileName ?? "photo.jpg",
+        type: asset.mimeType ?? "image/jpeg"
+      });
+    } catch (err) {
+      Alert.alert("Upload failed", getErrorMessage(err));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -40,72 +76,57 @@ export default function CreatorProfileScreen({
         {/* Profile */}
 
         <View style={styles.profileSection}>
-          <Image
-            source={{
-              uri:
-                "https://randomuser.me/api/portraits/men/32.jpg"
-            }}
-            style={styles.profileImage}
-          />
+          <TouchableOpacity onPress={handleChangePhoto} disabled={uploadPhoto.isPending}>
+            <Image
+              source={{
+                uri:
+                  "https://randomuser.me/api/portraits/men/32.jpg"
+              }}
+              style={styles.profileImage}
+            />
 
-          <Text style={styles.name}>
-            Arjun Music
-          </Text>
-
-          <Text style={styles.role}>
-            Composer • Producer
-          </Text>
-
-          <View style={styles.statsRow}>
-            <View>
-              <Text style={styles.statValue}>
-                124
-              </Text>
-              <Text style={styles.statLabel}>
-                Tunes
-              </Text>
+            <View style={styles.editBadge}>
+              {uploadPhoto.isPending ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Feather name="camera" size={14} color="#FFF" />
+              )}
             </View>
+          </TouchableOpacity>
 
-            <View>
-              <Text style={styles.statValue}>
-                18K
+          {isLoading ? (
+            <ActivityIndicator style={{ marginTop: 15 }} color={PRIMARY} />
+          ) : (
+            <>
+              <Text style={styles.name}>
+                {profile?.name || "Your Name"}
               </Text>
-              <Text style={styles.statLabel}>
-                Followers
-              </Text>
-            </View>
 
-            <View>
-              <Text style={styles.statValue}>
-                4.9
+              <Text style={styles.role}>
+                {profile?.roles?.join(" • ") || "No roles set"}
               </Text>
-              <Text style={styles.statLabel}>
-                Rating
-              </Text>
-            </View>
-          </View>
 
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={styles.followButton}
-            >
-              <Text
-                style={styles.followText}
-              >
-                Follow
-              </Text>
-            </TouchableOpacity>
+              <View style={styles.statsRow}>
+                <View>
+                  <Text style={styles.statValue}>
+                    {profile?.followers ?? 0}
+                  </Text>
+                  <Text style={styles.statLabel}>
+                    Followers
+                  </Text>
+                </View>
 
-            <TouchableOpacity
-              style={styles.messageButton}
-            >
-              <MaterialCommunityIcons
-                name="message-outline"
-                size={20}
-                color="#7C3AED"
-              />
-            </TouchableOpacity>
-          </View>
+                <View>
+                  <Text style={styles.statValue}>
+                    {profile?.rating?.toFixed(1) ?? "—"}
+                  </Text>
+                  <Text style={styles.statLabel}>
+                    Rating
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* About */}
@@ -120,37 +141,6 @@ export default function CreatorProfileScreen({
           music projects, and collaborative
           productions across multiple genres.
         </Text>
-
-        {/* Portfolio */}
-
-        <Text style={styles.sectionTitle}>
-          Featured Works
-        </Text>
-
-        {[1, 2, 3].map(item => (
-          <TouchableOpacity
-            key={item}
-            style={styles.workCard}
-          >
-            <View>
-              <Text style={styles.workTitle}>
-                Love Melody {item}
-              </Text>
-
-              <Text
-                style={styles.workMeta}
-              >
-                12.5K Plays
-              </Text>
-            </View>
-
-            <Feather
-              name="play-circle"
-              size={28}
-              color="#7C3AED"
-            />
-          </TouchableOpacity>
-        ))}
 
         {/* Skills */}
 
@@ -213,6 +203,20 @@ const styles = StyleSheet.create({
     borderColor: "#FFF"
   },
 
+  editBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: PRIMARY,
+    borderWidth: 2,
+    borderColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+
   name: {
     marginTop: 10,
     fontSize: 24,
@@ -242,32 +246,6 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
 
-  actionRow: {
-    flexDirection: "row",
-    marginTop: 20
-  },
-
-  followButton: {
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 10
-  },
-
-  followText: {
-    color: "#FFF",
-    fontWeight: "700"
-  },
-
-  messageButton: {
-    marginLeft: 12,
-    borderWidth: 1,
-    borderColor: PRIMARY,
-    paddingHorizontal: 18,
-    justifyContent: "center",
-    borderRadius: 10
-  },
-
   sectionTitle: {
     marginHorizontal: 20,
     marginTop: 25,
@@ -280,27 +258,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     lineHeight: 22,
     color: "#555"
-  },
-
-  workCard: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#EEE",
-    borderRadius: 12,
-    padding: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-
-  workTitle: {
-    fontWeight: "700"
-  },
-
-  workMeta: {
-    color: "#666",
-    marginTop: 4
   },
 
   skillsRow: {

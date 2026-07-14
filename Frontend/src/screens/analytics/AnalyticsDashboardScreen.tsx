@@ -1,8 +1,6 @@
+import { Feather } from "@expo/vector-icons";
 import {
-  Feather,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
-import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -11,6 +9,12 @@ import {
   View
 } from "react-native";
 
+import { useMyProjects } from "../../hooks/project/useMyProjects";
+import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
+import { useMyRightsListings } from "../../hooks/rights/useMyRightsListings";
+import { useProfile } from "../../hooks/profile/useProfile";
+import { useAuthStore } from "../../store/authStore";
+
 interface Props {
   navigation: any;
 }
@@ -18,6 +22,14 @@ interface Props {
 export default function AnalyticsDashboardScreen({
   navigation
 }: Props) {
+  const userId = useAuthStore((state) => state.user?.userId);
+  const { data: revenue, isLoading: revenueLoading } = useRevenueDashboard();
+  const { data: profile, isLoading: profileLoading } = useProfile(userId);
+  const { data: projects, isLoading: projectsLoading } = useMyProjects();
+  const { data: rightsListings, isLoading: rightsLoading } = useMyRightsListings();
+
+  const isLoading = revenueLoading || profileLoading || projectsLoading || rightsLoading;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -38,146 +50,73 @@ export default function AnalyticsDashboardScreen({
             Analytics
           </Text>
 
-          <TouchableOpacity>
-            <Feather
-              name="download"
-              size={20}
-            />
-          </TouchableOpacity>
+          <View style={{ width: 22 }} />
         </View>
 
-        {/* Overview */}
+        {isLoading ? (
+          <ActivityIndicator style={{ marginTop: 40 }} color="#7C3AED" />
+        ) : (
+          <>
+            {/* Overview */}
 
-        <View style={styles.heroCard}>
-          <Text style={styles.heroLabel}>
-            Total Revenue
-          </Text>
+            <View style={styles.heroCard}>
+              <Text style={styles.heroLabel}>
+                Total Revenue
+              </Text>
 
-          <Text style={styles.heroValue}>
-            ₹8,45,000
-          </Text>
+              <Text style={styles.heroValue}>
+                ₹{(revenue?.totalRevenue ?? 0).toLocaleString("en-IN")}
+              </Text>
 
-          <Text style={styles.heroGrowth}>
-            +18% this month
-          </Text>
-        </View>
+              <Text style={styles.heroGrowth}>
+                {(revenue?.growthPercent ?? 0) >= 0 ? "+" : ""}
+                {revenue?.growthPercent ?? 0}% this month
+              </Text>
+            </View>
 
-        {/* KPI */}
+            {/* KPI */}
 
-        <View style={styles.grid}>
-          <Metric
-            title="Plays"
-            value="125K"
-          />
+            <View style={styles.grid}>
+              <Metric
+                title="Followers"
+                value={String(profile?.followers ?? 0)}
+              />
 
-          <Metric
-            title="Followers"
-            value="42K"
-          />
+              <Metric
+                title="Projects"
+                value={String(projects?.total ?? 0)}
+              />
 
-          <Metric
-            title="Projects"
-            value="38"
-          />
+              <Metric
+                title="Rights Listed"
+                value={String(rightsListings?.totalRecords ?? 0)}
+              />
 
-          <Metric
-            title="Rights Sold"
-            value="14"
-          />
-        </View>
+              <Metric
+                title="Rights Sold"
+                value={String(rightsListings?.soldCount ?? 0)}
+              />
+            </View>
 
-        {/* Top Tunes */}
+            {/* Revenue Sources */}
 
-        <Text style={styles.sectionTitle}>
-          Top Performing Tunes
-        </Text>
+            <Text style={styles.sectionTitle}>
+              Revenue Sources
+            </Text>
 
-        <View style={styles.card}>
-          <TuneRow
-            title="Love Melody"
-            plays="56K"
-          />
+            <View style={styles.card}>
+              <TuneRow
+                title="Subscriptions"
+                plays={`₹${(revenue?.revenueBreakdown?.subscriptions ?? 0).toLocaleString("en-IN")}`}
+              />
 
-          <TuneRow
-            title="Dream Symphony"
-            plays="34K"
-          />
-
-          <TuneRow
-            title="Freedom Anthem"
-            plays="28K"
-          />
-        </View>
-
-        {/* Audience */}
-
-        <Text style={styles.sectionTitle}>
-          Audience Geography
-        </Text>
-
-        <View style={styles.card}>
-          <TuneRow
-            title="India"
-            plays="62%"
-          />
-
-          <TuneRow
-            title="USA"
-            plays="18%"
-          />
-
-          <TuneRow
-            title="UK"
-            plays="8%"
-          />
-
-          <TuneRow
-            title="Others"
-            plays="12%"
-          />
-        </View>
-
-        {/* Revenue Sources */}
-
-        <Text style={styles.sectionTitle}>
-          Revenue Sources
-        </Text>
-
-        <View style={styles.card}>
-          <TuneRow
-            title="Rights Sales"
-            plays="₹4,20,000"
-          />
-
-          <TuneRow
-            title="Streaming"
-            plays="₹2,10,000"
-          />
-
-          <TuneRow
-            title="Subscriptions"
-            plays="₹95,000"
-          />
-
-          <TuneRow
-            title="Advertising"
-            plays="₹1,20,000"
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.reportButton}
-        >
-          <MaterialCommunityIcons
-            name="file-chart"
-            color="#FFF"
-            size={22}
-          />
-
-          <Text style={styles.reportText}>
-            Export Analytics Report
-          </Text>
-        </TouchableOpacity>
+              <TuneRow
+                title="Marketplace Sales"
+                plays={`₹${(revenue?.revenueBreakdown?.marketplaceSales ?? 0).toLocaleString("en-IN")}`}
+              />
+            </View>
+          </>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -305,22 +244,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 10
-  },
-
-  reportButton: {
-    backgroundColor: PRIMARY,
-    marginHorizontal: 20,
-    marginTop: 25,
-    height: 55,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row"
-  },
-
-  reportText: {
-    color: "#FFF",
-    fontWeight: "700",
-    marginLeft: 10
   }
 });

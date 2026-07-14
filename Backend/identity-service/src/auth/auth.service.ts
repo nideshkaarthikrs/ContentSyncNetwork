@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { AuthRepository } from './auth.repository';
@@ -44,13 +45,25 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.repo.createUser({
-      fullName: dto.fullName,
-      email: dto.email,
-      mobile: dto.mobile,
-      passwordHash,
-      roles: dto.roles,
-    });
+    let user;
+    try {
+      user = await this.repo.createUser({
+        fullName: dto.fullName,
+        email: dto.email,
+        mobile: dto.mobile,
+        passwordHash,
+        roles: dto.roles,
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ConflictException({
+          status: 'ERROR',
+          errorCode: 'CSN-1001',
+          message: 'Email already registered',
+        });
+      }
+      throw err;
+    }
 
     return {
       status: 'SUCCESS',
@@ -134,5 +147,21 @@ export class AuthService {
   async logout(userId: string) {
     await this.repo.deleteAllRefreshTokensForUser(userId);
     return { status: 'SUCCESS' };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.repo.findUserById(userId);
+    const passwordMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!passwordMatch) {
+      throw new UnauthorizedException({
+        status: 'ERROR',
+        errorCode: 'CSN-1004',
+        message: 'Current password is incorrect',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.repo.updatePasswordHash(userId, passwordHash);
+    return { status: 'SUCCESS', message: 'Password changed successfully' };
   }
 }

@@ -4,7 +4,7 @@ import {
   MaterialIcons
 } from "@expo/vector-icons";
 import {
-  Image,
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,13 +14,52 @@ import {
   View
 } from "react-native";
 
+import { FeedItem, FeedItemType } from "../../api/services/feed.api";
+import { useHomeFeed } from "../../hooks/feed/useHomeFeed";
+
 interface Props {
   navigation: any;
+}
+
+const FEED_ICON: Record<FeedItemType, keyof typeof MaterialIcons.glyphMap> = {
+  TUNE: "music-note",
+  VIDEO: "videocam",
+  PROJECT: "folder",
+};
+
+function timeAgo(dateString: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function FeedCard({ item }: { item: FeedItem }) {
+  return (
+    <View style={styles.feedCard}>
+      <View style={styles.feedIconWrap}>
+        <MaterialIcons name={FEED_ICON[item.type]} size={20} color={PRIMARY} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.feedTitle}>{item.title}</Text>
+        <Text style={styles.feedMeta}>
+          {item.actorUserId} · {timeAgo(item.createdAt)}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 export default function HomeFeedScreen({
   navigation
 }: Props) {
+  const { data: feed, isLoading } = useHomeFeed();
+  const posts = feed?.data ?? [];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -65,142 +104,29 @@ export default function HomeFeedScreen({
           />
         </View>
 
-        {/* Trending */}
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Trending Now
-          </Text>
-
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>
-              See All
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        >
-          <TouchableOpacity
-            style={styles.trendingCard}
-          >
-            <Image
-              source={{
-                uri:
-                  "https://picsum.photos/300/200"
-              }}
-              style={styles.trendingImage}
-            />
-
-            <View style={styles.playCircle}>
-              <Ionicons
-                name="play"
-                size={20}
-                color="#FFF"
-              />
-            </View>
-
-            <Text style={styles.songTitle}>
-              Romantic Melody
-            </Text>
-
-            <Text style={styles.songAuthor}>
-              Arjun Music
-            </Text>
-
-            <Text style={styles.songStats}>
-              ♡ 1.2K
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.trendingCard}
-          >
-            <Image
-              source={{
-                uri:
-                  "https://picsum.photos/301/200"
-              }}
-              style={styles.trendingImage}
-            />
-
-            <View style={styles.playCircle}>
-              <Ionicons
-                name="play"
-                size={20}
-                color="#FFF"
-              />
-            </View>
-
-            <Text style={styles.songTitle}>
-              Feel The Soul
-            </Text>
-
-            <Text style={styles.songAuthor}>
-              SoundWave
-            </Text>
-
-            <Text style={styles.songStats}>
-              ❤️ 987
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-
         {/* Latest From Network */}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
             Latest From Network
           </Text>
+        </View>
 
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>
-              See All
+        {isLoading && (
+          <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
+        )}
+
+        {!isLoading && posts.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="musical-notes-outline" size={40} color="#CCC" />
+            <Text style={styles.emptyText}>
+              Nothing in your feed yet. Follow creators and upload tunes to see activity here.
             </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.postCard}>
-          <View style={styles.postHeader}>
-            <Image
-              source={{
-                uri:
-                  "https://randomuser.me/api/portraits/women/44.jpg"
-              }}
-              style={styles.avatar}
-            />
-
-            <View>
-              <Text style={styles.userName}>
-                Priya Singer
-              </Text>
-
-              <Text style={styles.postTime}>
-                2h ago
-              </Text>
-            </View>
           </View>
+        )}
 
-          <Image
-            source={{
-              uri:
-                "https://picsum.photos/400/300"
-            }}
-            style={styles.postImage}
-          />
-
-          <TouchableOpacity
-            style={styles.postPlay}
-          >
-            <Ionicons
-              name="play"
-              size={26}
-              color="#FFF"
-            />
-          </TouchableOpacity>
-        </View>
+        {!isLoading &&
+          posts.map((item) => <FeedCard key={item.feedItemId} item={item} />)}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -282,87 +208,51 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
 
-  seeAll: {
-    color: PRIMARY,
-    fontWeight: "600"
+  emptyState: {
+    alignItems: "center",
+    paddingHorizontal: 40,
+    paddingVertical: 30
   },
 
-  trendingCard: {
-    width: 180,
-    marginLeft: 20
+  emptyText: {
+    color: "#888",
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 20
   },
 
-  trendingImage: {
-    width: 180,
-    height: 120,
-    borderRadius: 16
-  },
-
-  playCircle: {
-    position: "absolute",
-    top: 40,
-    left: 75,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  songTitle: {
-    marginTop: 10,
-    fontWeight: "700"
-  },
-
-  songAuthor: {
-    color: "#666",
-    marginTop: 3
-  },
-
-  songStats: {
-    marginTop: 4
-  },
-
-  postCard: {
-    marginHorizontal: 20,
-    backgroundColor: "#FFF",
-    borderRadius: 18,
-    marginBottom: 20
-  },
-
-  postHeader: {
+  feedCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1,
+    borderColor: "#F0F0F0"
   },
 
-  avatar: {
+  feedIconWrap: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 10
+    backgroundColor: "#F3E8FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12
   },
 
-  userName: {
-    fontWeight: "700"
+  feedTitle: {
+    fontWeight: "600",
+    fontSize: 15,
+    color: "#111"
   },
 
-  postTime: {
-    color: "#666",
-    fontSize: 12
-  },
-
-  postImage: {
-    width: "100%",
-    height: 220,
-    borderRadius: 18
-  },
-
-  postPlay: {
-    position: "absolute",
-    top: 120,
-    left: "45%"
+  feedMeta: {
+    color: "#999",
+    fontSize: 12,
+    marginTop: 2
   },
 
   fab: {

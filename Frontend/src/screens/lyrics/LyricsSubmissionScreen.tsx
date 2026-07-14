@@ -11,27 +11,76 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import SelectListModal from "../../components/common/SelectListModal";
+import { useCreateLyrics } from "../../hooks/lyrics/useCreateLyrics";
+import { useGenerateLyrics } from "../../hooks/lyrics/useGenerateLyrics";
+
 interface Props {
   navigation: any;
   route: any;
 }
 
+const LANGUAGES = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada"];
+
 export default function LyricsSubmissionScreen({
   navigation,
   route
 }: Props) {
-  const tune = route?.params?.tune || "Love Melody";
+  const tuneId: string | undefined = route?.params?.tuneId;
+  const tuneTitle: string = route?.params?.tuneTitle || "Untitled Tune";
 
-  const [language, setLanguage] =
-    useState("Tamil");
+  const [language, setLanguage] = useState("Tamil");
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [lyrics, setLyrics] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    Alert.alert(
-      "Success",
-      "Lyrics submitted successfully."
-    );
+  const createLyrics = useCreateLyrics();
+  const generateLyrics = useGenerateLyrics();
+
+  const handleAiAssist = async () => {
+    if (!tuneId) {
+      setError("No tune selected — open this screen from a tune's detail page.");
+      return;
+    }
+    try {
+      const result = await generateLyrics.mutateAsync({
+        tuneId,
+        language,
+        theme: title || "love"
+      });
+      const first = result.versions[0];
+      if (first) setLyrics(first.lyrics);
+    } catch (err) {
+      Alert.alert("AI Assist Failed", getErrorMessage(err));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!tuneId) {
+      setError("No tune selected — open this screen from a tune's detail page.");
+      return;
+    }
+    if (!lyrics.trim()) {
+      setError("Please write some lyrics before submitting.");
+      return;
+    }
+    setError(null);
+
+    try {
+      await createLyrics.mutateAsync({
+        tuneId,
+        title: title || tuneTitle,
+        language,
+        lyrics
+      });
+      Alert.alert("Success", "Lyrics submitted successfully.", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to submit lyrics."));
+    }
   };
 
   return (
@@ -62,7 +111,7 @@ export default function LyricsSubmissionScreen({
         <Text style={styles.label}>Tune</Text>
 
         <View style={styles.readOnlyBox}>
-          <Text>{tune}</Text>
+          <Text>{tuneTitle}</Text>
         </View>
 
         {/* Language */}
@@ -73,6 +122,7 @@ export default function LyricsSubmissionScreen({
 
         <TouchableOpacity
           style={styles.dropdown}
+          onPress={() => setLanguageModalOpen(true)}
         >
           <Text>{language}</Text>
 
@@ -115,23 +165,21 @@ export default function LyricsSubmissionScreen({
           {lyrics.length}/5000
         </Text>
 
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        )}
+
         {/* AI Assist */}
 
         <TouchableOpacity
           style={styles.secondaryButton}
+          onPress={handleAiAssist}
+          disabled={generateLyrics.isPending}
         >
           <Text style={styles.secondaryText}>
-            AI Lyric Assist
-          </Text>
-        </TouchableOpacity>
-
-        {/* Save */}
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-        >
-          <Text style={styles.secondaryText}>
-            Save Draft
+            {generateLyrics.isPending ? "Generating..." : "AI Lyric Assist"}
           </Text>
         </TouchableOpacity>
 
@@ -140,14 +188,28 @@ export default function LyricsSubmissionScreen({
         <TouchableOpacity
           style={styles.primaryButton}
           onPress={handleSubmit}
+          disabled={createLyrics.isPending}
         >
           <Text style={styles.primaryText}>
-            Submit Lyrics
+            {createLyrics.isPending ? "Submitting..." : "Submit Lyrics"}
           </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <SelectListModal
+        visible={languageModalOpen}
+        title="Select Language"
+        items={LANGUAGES}
+        keyExtractor={(item) => item}
+        labelExtractor={(item) => item}
+        onSelect={(item) => {
+          setLanguage(item);
+          setLanguageModalOpen(false);
+        }}
+        onClose={() => setLanguageModalOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -226,6 +288,13 @@ const styles = StyleSheet.create({
     marginRight: 25,
     color: "#777",
     marginTop: 5
+  },
+
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginHorizontal: 20,
+    marginTop: 10
   },
 
   secondaryButton: {

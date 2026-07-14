@@ -2,49 +2,60 @@ import {
   Feather,
   MaterialCommunityIcons
 } from "@expo/vector-icons";
+import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
+import { useWithdraw } from "../../hooks/payment/useWithdraw";
 
 interface Props {
   navigation: any;
 }
 
-const transactions = [
-  {
-    id: "1",
-    title: "Rights Sale",
-    amount: "+ ₹50,000",
-    date: "Today"
-  },
-  {
-    id: "2",
-    title: "Streaming Revenue",
-    amount: "+ ₹12,500",
-    date: "Yesterday"
-  },
-  {
-    id: "3",
-    title: "Subscription Renewal",
-    amount: "- ₹499",
-    date: "25 Jun"
-  },
-  {
-    id: "4",
-    title: "Wallet Withdrawal",
-    amount: "- ₹20,000",
-    date: "20 Jun"
-  }
-];
-
 export default function WalletPaymentsScreen({
   navigation
 }: Props) {
+  const { data, isLoading } = useRevenueDashboard();
+  const withdraw = useWithdraw();
+
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [bankAccountId, setBankAccountId] = useState("");
+  const [lastWithdrawal, setLastWithdrawal] = useState<{ withdrawalId: string; status: string } | null>(null);
+
+  const handleWithdraw = async () => {
+    const parsedAmount = parseFloat(amount);
+    if (!parsedAmount || parsedAmount <= 0) {
+      Alert.alert("Enter an amount", "Please enter a valid withdrawal amount.");
+      return;
+    }
+    if (!bankAccountId.trim()) {
+      Alert.alert("Enter a bank account", "Please enter a bank account ID.");
+      return;
+    }
+    try {
+      const result = await withdraw.mutateAsync({ amount: parsedAmount, bankAccountId: bankAccountId.trim() });
+      setLastWithdrawal(result);
+      setShowWithdrawForm(false);
+      setAmount("");
+      setBankAccountId("");
+      Alert.alert("Withdrawal Requested", `${result.withdrawalId} is ${result.status}.`);
+    } catch (err) {
+      Alert.alert("Withdrawal Failed", getErrorMessage(err));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -67,27 +78,26 @@ export default function WalletPaymentsScreen({
             Wallet & Payments
           </Text>
 
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="history"
-              size={24}
-            />
-          </TouchableOpacity>
+          <View style={{ width: 24 }} />
         </View>
 
         {/* Wallet Card */}
 
         <View style={styles.walletCard}>
           <Text style={styles.balanceLabel}>
-            Available Balance
+            Total Revenue
           </Text>
 
-          <Text style={styles.balance}>
-            ₹1,25,450
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFF" style={{ marginTop: 10 }} />
+          ) : (
+            <Text style={styles.balance}>
+              ₹{(data?.totalRevenue ?? 0).toLocaleString("en-IN")}
+            </Text>
+          )}
 
           <Text style={styles.updated}>
-            Last Updated: Today
+            Royalties ₹{data?.royalties ?? 0} • Marketplace ₹{data?.marketplaceSales ?? 0} • Contests ₹{data?.contestWins ?? 0}
           </Text>
         </View>
 
@@ -96,6 +106,7 @@ export default function WalletPaymentsScreen({
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionButton}
+            onPress={() => setShowWithdrawForm(!showWithdrawForm)}
           >
             <MaterialCommunityIcons
               name="bank-transfer-out"
@@ -107,130 +118,43 @@ export default function WalletPaymentsScreen({
               Withdraw
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-          >
-            <MaterialCommunityIcons
-              name="cash-plus"
-              size={26}
-              color="#7C3AED"
-            />
-
-            <Text style={styles.actionText}>
-              Add Funds
-            </Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Payment Methods */}
+        {showWithdrawForm && (
+          <View style={styles.withdrawForm}>
+            <TextInput
+              style={styles.input}
+              placeholder="Amount"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+            />
 
-        <Text style={styles.sectionTitle}>
-          Payment Methods
-        </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Bank Account ID"
+              value={bankAccountId}
+              onChangeText={setBankAccountId}
+            />
 
-        <TouchableOpacity
-          style={styles.methodCard}
-        >
-          <MaterialCommunityIcons
-            name="bank"
-            size={26}
-            color="#7C3AED"
-          />
-
-          <View
-            style={{ marginLeft: 12 }}
-          >
-            <Text
-              style={styles.methodTitle}
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleWithdraw}
+              disabled={withdraw.isPending}
             >
-              HDFC Bank
-            </Text>
-
-            <Text
-              style={styles.methodSub}
-            >
-              xxxx xxxx 3456
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.methodCard}
-        >
-          <MaterialCommunityIcons
-            name="wallet-outline"
-            size={26}
-            color="#7C3AED"
-          />
-
-          <View
-            style={{ marginLeft: 12 }}
-          >
-            <Text
-              style={styles.methodTitle}
-            >
-              UPI
-            </Text>
-
-            <Text
-              style={styles.methodSub}
-            >
-              arjun@okhdfc
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Transactions */}
-
-        <Text style={styles.sectionTitle}>
-          Recent Transactions
-        </Text>
-
-        {transactions.map(item => (
-          <View
-            key={item.id}
-            style={styles.transactionCard}
-          >
-            <View>
-              <Text
-                style={styles.transactionTitle}
-              >
-                {item.title}
+              <Text style={styles.submitText}>
+                {withdraw.isPending ? "Submitting..." : "Request Withdrawal"}
               </Text>
-
-              <Text
-                style={styles.transactionDate}
-              >
-                {item.date}
-              </Text>
-            </View>
-
-            <Text
-              style={[
-                styles.amount,
-                {
-                  color:
-                    item.amount.startsWith(
-                      "+"
-                    )
-                      ? "#10B981"
-                      : "#EF4444"
-                }
-              ]}
-            >
-              {item.amount}
-            </Text>
+            </TouchableOpacity>
           </View>
-        ))}
+        )}
 
-        <TouchableOpacity
-          style={styles.taxButton}
-        >
-          <Text style={styles.taxText}>
-            Download Tax Statement
-          </Text>
-        </TouchableOpacity>
+        {lastWithdrawal && (
+          <View style={styles.transactionCard}>
+            <Text style={styles.transactionTitle}>{lastWithdrawal.withdrawalId}</Text>
+            <Text style={styles.amount}>{lastWithdrawal.status}</Text>
+          </View>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -280,17 +204,18 @@ const styles = StyleSheet.create({
 
   updated: {
     color: "#E9D5FF",
-    marginTop: 8
+    marginTop: 8,
+    fontSize: 12
   },
 
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginHorizontal: 20
   },
 
   actionButton: {
-    width: "48%",
+    width: "100%",
     backgroundColor: "#F5F3FF",
     paddingVertical: 18,
     borderRadius: 14,
@@ -302,37 +227,36 @@ const styles = StyleSheet.create({
     fontWeight: "600"
   },
 
-  sectionTitle: {
+  withdrawForm: {
     marginHorizontal: 20,
-    marginTop: 25,
-    marginBottom: 12,
-    fontSize: 18,
-    fontWeight: "700"
+    marginTop: 15
   },
 
-  methodCard: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 15,
+  input: {
+    height: 50,
     borderWidth: 1,
-    borderColor: "#EEE",
-    borderRadius: 12,
-    flexDirection: "row",
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 10
+  },
+
+  submitButton: {
+    backgroundColor: PRIMARY,
+    height: 52,
+    borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center"
   },
 
-  methodTitle: {
+  submitText: {
+    color: "#FFF",
     fontWeight: "700"
-  },
-
-  methodSub: {
-    color: "#666",
-    marginTop: 2
   },
 
   transactionCard: {
     marginHorizontal: 20,
-    marginBottom: 12,
+    marginTop: 20,
     padding: 15,
     borderWidth: 1,
     borderColor: "#EEE",
@@ -345,27 +269,8 @@ const styles = StyleSheet.create({
     fontWeight: "600"
   },
 
-  transactionDate: {
-    color: "#666",
-    marginTop: 4
-  },
-
   amount: {
-    fontWeight: "700"
-  },
-
-  taxButton: {
-    backgroundColor: PRIMARY,
-    marginHorizontal: 20,
-    marginTop: 25,
-    height: 55,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  taxText: {
-    color: "#FFF",
-    fontWeight: "700"
+    fontWeight: "700",
+    color: "#10B981"
   }
 });

@@ -4,6 +4,7 @@ import {
 } from "@expo/vector-icons";
 import { useState } from "react";
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -12,16 +13,25 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { SubscriptionPlan } from "../../api/services/payment.api";
+import { useSubscribe } from "../../hooks/payment/useSubscribe";
+
 interface Props {
   navigation: any;
 }
 
-const plans = [
+const plans: {
+  id: SubscriptionPlan;
+  name: string;
+  price: string;
+  features: string[];
+  popular?: boolean;
+}[] = [
   {
-    id: "free",
+    id: "FREE",
     name: "Free",
     price: "₹0",
-    color: "#F3F4F6",
     features: [
       "Browse Projects",
       "Submit Entries",
@@ -30,10 +40,9 @@ const plans = [
     ]
   },
   {
-    id: "pro",
-    name: "Pro Creator",
+    id: "PREMIUM",
+    name: "Premium",
     price: "₹499 / month",
-    color: "#7C3AED",
     popular: true,
     features: [
       "Unlimited Uploads",
@@ -44,10 +53,9 @@ const plans = [
     ]
   },
   {
-    id: "studio",
-    name: "Studio",
-    price: "₹1,999 / month",
-    color: "#4F46E5",
+    id: "PRODUCER",
+    name: "Producer",
+    price: "₹10,000 / month",
     features: [
       "Team Workspace",
       "Revenue Dashboard",
@@ -62,7 +70,20 @@ export default function SubscriptionPlansScreen({
   navigation
 }: Props) {
   const [selectedPlan, setSelectedPlan] =
-    useState("pro");
+    useState<SubscriptionPlan>("PREMIUM");
+  const [activePlan, setActivePlan] = useState<string | null>(null);
+
+  const subscribe = useSubscribe();
+
+  const handleUpgrade = async () => {
+    try {
+      const result = await subscribe.mutateAsync(selectedPlan);
+      setActivePlan(result.plan);
+      Alert.alert("Subscribed", `You're now on the ${result.plan} plan.`);
+    } catch (err) {
+      Alert.alert("Subscription Failed", getErrorMessage(err));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,11 +118,7 @@ export default function SubscriptionPlansScreen({
           </Text>
 
           <Text style={styles.currentPlan}>
-            Pro Creator
-          </Text>
-
-          <Text style={styles.expiry}>
-            Renews on 30 June 2026
+            {activePlan ?? "No active subscription"}
           </Text>
         </View>
 
@@ -181,23 +198,13 @@ export default function SubscriptionPlansScreen({
 
         <TouchableOpacity
           style={styles.upgradeButton}
+          onPress={handleUpgrade}
+          disabled={subscribe.isPending}
         >
           <Text
             style={styles.upgradeText}
           >
-            Upgrade Plan
-          </Text>
-        </TouchableOpacity>
-
-        {/* Compare Plans */}
-
-        <TouchableOpacity
-          style={styles.compareButton}
-        >
-          <Text
-            style={styles.compareText}
-          >
-            Compare Features
+            {subscribe.isPending ? "Subscribing..." : "Upgrade Plan"}
           </Text>
         </TouchableOpacity>
 
@@ -243,11 +250,6 @@ const styles = StyleSheet.create({
   currentPlan: {
     fontSize: 22,
     fontWeight: "700",
-    marginTop: 5
-  },
-
-  expiry: {
-    color: "#666",
     marginTop: 5
   },
 
@@ -316,21 +318,5 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "700",
     fontSize: 16
-  },
-
-  compareButton: {
-    marginHorizontal: 20,
-    marginTop: 15,
-    borderWidth: 1,
-    borderColor: PRIMARY,
-    height: 55,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  compareText: {
-    color: PRIMARY,
-    fontWeight: "700"
   }
 });

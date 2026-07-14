@@ -1,51 +1,31 @@
 import {
-  Feather,
-  MaterialIcons
+  Feather
 } from "@expo/vector-icons";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+
+import { useRightsListings } from "../../hooks/rights/useRightsListings";
 
 interface Props {
   navigation: any;
 }
 
-const listings = [
-  {
-    id: "1",
-    title: "Love Melody",
-    type: "Tune Rights",
-    owner: "Arjun Music",
-    price: "₹75,000"
-  },
-  {
-    id: "2",
-    title: "Dream Lyrics",
-    type: "Lyrics Rights",
-    owner: "Priya Writer",
-    price: "₹45,000"
-  },
-  {
-    id: "3",
-    title: "Freedom Anthem",
-    type: "Full Project",
-    owner: "CSN Studio",
-    price: "₹2,50,000"
-  }
-];
+const CATEGORIES = ["All", "TUNE", "SONG", "VIDEO"];
 
 export default function RightsMarketplaceScreen({
   navigation
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [category, setCategory] = useState("All");
+  const { data, isLoading } = useRightsListings(category === "All" ? undefined : category);
+  const listings = data?.data ?? [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,29 +46,7 @@ export default function RightsMarketplaceScreen({
             Rights Marketplace
           </Text>
 
-          <TouchableOpacity>
-            <MaterialIcons
-              name="filter-list"
-              size={22}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search */}
-
-        <View style={styles.searchBox}>
-          <Feather
-            name="search"
-            size={18}
-            color="#777"
-          />
-
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search rights..."
-            style={styles.searchInput}
-          />
+          <View style={{ width: 22 }} />
         </View>
 
         {/* Categories */}
@@ -98,36 +56,42 @@ export default function RightsMarketplaceScreen({
           showsHorizontalScrollIndicator={
             false
           }
-          style={{ marginTop: 15 }}
+          style={{ marginTop: 5 }}
         >
-          {[
-            "All",
-            "Tunes",
-            "Lyrics",
-            "Videos",
-            "Projects"
-          ].map(item => (
+          {CATEGORIES.map(item => (
             <TouchableOpacity
               key={item}
-              style={styles.categoryChip}
+              style={[
+                styles.categoryChip,
+                category === item && styles.categoryChipActive
+              ]}
+              onPress={() => setCategory(item)}
             >
-              <Text>{item}</Text>
+              <Text style={category === item ? styles.categoryTextActive : undefined}>
+                {item}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {/* Listings */}
 
+        {isLoading && (
+          <ActivityIndicator style={{ marginTop: 30 }} color={PRIMARY} />
+        )}
+
+        {!isLoading && listings.length === 0 && (
+          <Text style={styles.emptyText}>No listings available right now.</Text>
+        )}
+
         {listings.map(item => (
           <TouchableOpacity
-            key={item.id}
+            key={item.listingId}
             style={styles.listingCard}
             onPress={() =>
               navigation.navigate(
                 "RightsDetail",
-                {
-                  listingId: item.id
-                }
+                { listing: item }
               )
             }
           >
@@ -137,7 +101,7 @@ export default function RightsMarketplaceScreen({
               <Text
                 style={styles.assetTitle}
               >
-                {item.title}
+                {item.assetId}
               </Text>
 
               <View
@@ -146,20 +110,20 @@ export default function RightsMarketplaceScreen({
                 <Text
                   style={styles.badgeText}
                 >
-                  {item.type}
+                  {item.assetType}
                 </Text>
               </View>
             </View>
 
             <Text style={styles.owner}>
-              Owner: {item.owner}
+              {item.licenseType} • {item.territory} • {item.term}
             </Text>
 
             <Text style={styles.price}>
-              {item.price}
+              ₹{item.price.toLocaleString("en-IN")}
             </Text>
 
-            <TouchableOpacity
+            <View
               style={styles.buyButton}
             >
               <Text
@@ -167,29 +131,12 @@ export default function RightsMarketplaceScreen({
               >
                 View Details
               </Text>
-            </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         ))}
 
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Floating Action */}
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() =>
-          navigation.navigate(
-            "CreateRightsListing"
-          )
-        }
-      >
-        <MaterialIcons
-          name="add"
-          size={28}
-          color="#FFF"
-        />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -216,22 +163,6 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
 
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    marginHorizontal: 20,
-    paddingHorizontal: 15,
-    height: 50
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: 10
-  },
-
   categoryChip: {
     borderWidth: 1,
     borderColor: "#DDD",
@@ -239,6 +170,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     marginLeft: 15
+  },
+
+  categoryChipActive: {
+    backgroundColor: PRIMARY,
+    borderColor: PRIMARY
+  },
+
+  categoryTextActive: {
+    color: "#FFF"
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: "#888",
+    marginTop: 30,
+    paddingHorizontal: 20
   },
 
   listingCard: {
@@ -295,18 +242,5 @@ const styles = StyleSheet.create({
   buyText: {
     color: "#FFF",
     fontWeight: "700"
-  },
-
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: PRIMARY,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5
   }
 });

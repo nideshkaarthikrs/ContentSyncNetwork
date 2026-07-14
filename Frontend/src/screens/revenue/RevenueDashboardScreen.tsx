@@ -3,6 +3,7 @@ import {
   MaterialCommunityIcons
 } from "@expo/vector-icons";
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -11,36 +12,25 @@ import {
   View
 } from "react-native";
 
+import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
+
 interface Props {
   navigation: any;
 }
 
-const revenueItems = [
-  {
-    id: "1",
-    source: "Music Streaming",
-    amount: "₹1,25,000"
-  },
-  {
-    id: "2",
-    source: "Rights Sales",
-    amount: "₹3,80,000"
-  },
-  {
-    id: "3",
-    source: "Voting Revenue",
-    amount: "₹85,000"
-  },
-  {
-    id: "4",
-    source: "Premium Membership",
-    amount: "₹55,000"
-  }
-];
-
 export default function RevenueDashboardScreen({
   navigation
 }: Props) {
+  const { data, isLoading } = useRevenueDashboard();
+
+  const revenueItems = data
+    ? [
+        { id: "royalties", source: "Royalties", amount: data.royalties },
+        { id: "marketplaceSales", source: "Marketplace Sales", amount: data.marketplaceSales },
+        { id: "contestWins", source: "Contest Wins", amount: data.contestWins }
+      ]
+    : [];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -71,37 +61,13 @@ export default function RevenueDashboardScreen({
             Total Revenue
           </Text>
 
-          <Text style={styles.summaryAmount}>
-            ₹6,45,000
-          </Text>
-
-          <Text style={styles.growth}>
-            ↑ 18% this month
-          </Text>
-        </View>
-
-        {/* Earnings Cards */}
-
-        <View style={styles.cardRow}>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricValue}>
-              ₹2.1L
+          {isLoading ? (
+            <ActivityIndicator color="#FFF" style={{ marginTop: 10 }} />
+          ) : (
+            <Text style={styles.summaryAmount}>
+              ₹{(data?.totalRevenue ?? 0).toLocaleString("en-IN")}
             </Text>
-
-            <Text style={styles.metricLabel}>
-              This Month
-            </Text>
-          </View>
-
-          <View style={styles.metricCard}>
-            <Text style={styles.metricValue}>
-              ₹48K
-            </Text>
-
-            <Text style={styles.metricLabel}>
-              Pending
-            </Text>
-          </View>
+          )}
         </View>
 
         {/* Revenue Sources */}
@@ -124,7 +90,7 @@ export default function RevenueDashboardScreen({
             </View>
 
             <Text style={styles.amount}>
-              {item.amount}
+              ₹{item.amount.toLocaleString("en-IN")}
             </Text>
           </View>
         ))}
@@ -133,6 +99,7 @@ export default function RevenueDashboardScreen({
 
         <TouchableOpacity
           style={styles.withdrawButton}
+          onPress={() => navigation.navigate("WalletPayments")}
         >
           <MaterialCommunityIcons
             name="bank-transfer"
@@ -142,16 +109,6 @@ export default function RevenueDashboardScreen({
 
           <Text style={styles.withdrawText}>
             Withdraw Earnings
-          </Text>
-        </TouchableOpacity>
-
-        {/* Reports */}
-
-        <TouchableOpacity
-          style={styles.reportButton}
-        >
-          <Text style={styles.reportText}>
-            Download Revenue Report
           </Text>
         </TouchableOpacity>
 
@@ -202,34 +159,6 @@ const styles = StyleSheet.create({
     marginTop: 5
   },
 
-  growth: {
-    color: "#FFF",
-    marginTop: 10
-  },
-
-  cardRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: 20
-  },
-
-  metricCard: {
-    width: "48%",
-    backgroundColor: "#F5F3FF",
-    padding: 18,
-    borderRadius: 12
-  },
-
-  metricValue: {
-    fontSize: 22,
-    fontWeight: "700"
-  },
-
-  metricLabel: {
-    marginTop: 4,
-    color: "#666"
-  },
-
   sectionTitle: {
     marginHorizontal: 20,
     marginTop: 25,
@@ -273,21 +202,5 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "700",
     marginLeft: 10
-  },
-
-  reportButton: {
-    marginHorizontal: 20,
-    marginTop: 15,
-    borderWidth: 1,
-    borderColor: PRIMARY,
-    height: 55,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  reportText: {
-    color: PRIMARY,
-    fontWeight: "700"
   }
 });

@@ -62,7 +62,10 @@ model Purchase {
   licenseType    String
   buyerId        String
   buyerUserId    String
-  status         PurchaseStatus @default(PENDING)
+  price          Int            @default(0)
+  sellerId       String         @default("")
+  sellerUserId   String         @default("")
+  status         PurchaseStatus @default(COMPLETED)
   createdAt      DateTime       @default(now())
 
   @@map("purchases")

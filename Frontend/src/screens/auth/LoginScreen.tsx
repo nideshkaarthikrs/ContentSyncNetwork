@@ -14,6 +14,9 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useLogin } from "../../hooks/auth/useLogin";
+
 interface Props {
   navigation: any;
 }
@@ -23,9 +26,17 @@ export default function LoginScreen({
 }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const login = useLogin();
 
-  const handleLogin = () => {
-    navigation.navigate("RoleSelection");
+  const handleLogin = async () => {
+    setError(null);
+    try {
+      await login.mutateAsync({ email, password });
+      navigation.replace("Main");
+    } catch (err) {
+      setError(getErrorMessage(err, "Invalid email or password."));
+    }
   };
 
   return (
@@ -82,12 +93,19 @@ export default function LoginScreen({
           </Text>
         </TouchableOpacity>
 
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        )}
+
         <TouchableOpacity
           style={styles.loginButton}
           onPress={handleLogin}
+          disabled={login.isPending}
         >
           <Text style={styles.loginText}>
-            Login
+            {login.isPending ? "Logging in..." : "Login"}
           </Text>
         </TouchableOpacity>
 
@@ -187,6 +205,12 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     color: "#6B7280",
     marginBottom: 25
+  },
+
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginBottom: 15
   },
 
   loginButton: {

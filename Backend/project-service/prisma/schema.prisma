@@ -17,6 +17,7 @@ model Project {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   members        ProjectMember[]
+  files          ProjectFile[]
 }
 
 model ProjectMember {
@@ -29,6 +30,22 @@ model ProjectMember {
   project       Project      @relation(fields: [projectId], references: [id])
 
   @@unique([projectId, userDisplayId])
+}
+
+model ProjectFile {
+  id             String   @id @default(uuid())
+  sequenceNumber Int      @default(autoincrement())
+  projectId      String
+  uploaderId     String
+  uploaderUserId String
+  filename       String
+  fileUrl        String
+  fileSize       Int?
+  mimeType       String?
+  createdAt      DateTime @default(now())
+  project        Project  @relation(fields: [projectId], references: [id])
+
+  @@map("project_files")
 }
 
 enum ProjectStatus {

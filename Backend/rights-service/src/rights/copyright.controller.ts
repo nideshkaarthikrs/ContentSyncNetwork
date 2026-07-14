@@ -27,7 +27,7 @@ export class CopyrightController {
   @Get('claims/:claimId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getClaim(@Param('claimId') claimId: string) {
-    return this.rightsService.getClaimById(claimId);
+  getClaim(@Param('claimId') claimId: string, @Request() req) {
+    return this.rightsService.getClaimById(claimId, req.user);
   }
 }

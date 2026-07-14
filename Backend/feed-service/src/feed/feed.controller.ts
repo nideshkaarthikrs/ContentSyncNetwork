@@ -1,5 +1,6 @@
 import { Controller, DefaultValuePipe, Get, HttpCode, HttpStatus, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { clampPagination } from '../shared/pagination.helper';
 import { FeedService } from './feed.service';
 
 @Controller('feed')
@@ -13,7 +14,8 @@ export class FeedController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ) {
-    return this.feedService.getFeed(page, pageSize, 'Home feed retrieved');
+    const clamped = clampPagination(page, pageSize);
+    return this.feedService.getFeed(clamped.page, clamped.pageSize, 'Home feed retrieved');
   }
 
   @Get('trending')
@@ -23,7 +25,8 @@ export class FeedController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ) {
-    return this.feedService.getFeed(page, pageSize, 'Trending feed retrieved');
+    const clamped = clampPagination(page, pageSize);
+    return this.feedService.getFeed(clamped.page, clamped.pageSize, 'Trending feed retrieved');
   }
 
   @Get('recommended')
@@ -33,6 +36,7 @@ export class FeedController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ) {
-    return this.feedService.getFeed(page, pageSize, 'Recommended feed retrieved');
+    const clamped = clampPagination(page, pageSize);
+    return this.feedService.getFeed(clamped.page, clamped.pageSize, 'Recommended feed retrieved');
   }
 }

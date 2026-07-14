@@ -9,7 +9,18 @@ export class ProfileRepository {
     return this.prisma.profile.findUnique({ where: { userId } });
   }
 
-  async upsert(userId: string, data: { name?: string; bio?: string; roles?: string[]; avatarUrl?: string }) {
+  async upsert(
+    userId: string,
+    data: {
+      name?: string;
+      bio?: string;
+      roles?: string[];
+      avatarUrl?: string;
+      primaryRole?: string;
+      publicProfile?: boolean;
+      pushNotificationsEnabled?: boolean;
+    },
+  ) {
     return this.prisma.profile.upsert({
       where: { userId },
       create: { userId, ...data },

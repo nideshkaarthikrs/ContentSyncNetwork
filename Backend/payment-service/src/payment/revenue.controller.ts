@@ -10,8 +10,8 @@ export class RevenueController {
   @Get('dashboard')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  dashboard() {
-    return this.paymentService.getRevenueDashboard();
+  dashboard(@Request() req) {
+    return this.paymentService.getRevenueDashboard(req.user);
   }
 
   @Post('withdraw')

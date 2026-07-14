@@ -25,6 +25,35 @@ export class RightsRepository {
     });
   }
 
+  findMyListings(ownerId: string, page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+    return Promise.all([
+      this.prisma.rightsListing.findMany({
+        where: { ownerId },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.rightsListing.count({ where: { ownerId } }),
+      this.prisma.rightsListing.count({ where: { ownerId, status: 'SOLD' as any } }),
+    ]);
+  }
+
+  createListing(
+    assetId: string,
+    assetType: string,
+    ownerId: string,
+    ownerUserId: string,
+    licenseType: string,
+    price: number,
+    territory?: string,
+    term?: string,
+  ) {
+    return this.prisma.rightsListing.create({
+      data: { assetId, assetType: assetType as any, ownerId, ownerUserId, licenseType: licenseType as any, price, territory, term },
+    });
+  }
+
   updateListingStatus(id: string, status: string) {
     return this.prisma.rightsListing.update({
       where: { id },
@@ -32,9 +61,27 @@ export class RightsRepository {
     });
   }
 
-  createPurchase(assetId: string, licenseType: string, buyerId: string, buyerUserId: string) {
-    return this.prisma.purchase.create({
-      data: { assetId, licenseType, buyerId, buyerUserId },
+  async purchaseListing(
+    listingId: string,
+    assetId: string,
+    licenseType: string,
+    buyerId: string,
+    buyerUserId: string,
+    price: number,
+    sellerId: string,
+    sellerUserId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.rightsListing.updateMany({
+        where: { id: listingId, status: 'AVAILABLE' as any },
+        data: { status: 'SOLD' as any },
+      });
+      if (count !== 1) {
+        return null;
+      }
+      return tx.purchase.create({
+        data: { assetId, licenseType, buyerId, buyerUserId, price, sellerId, sellerUserId, status: 'COMPLETED' },
+      });
     });
   }
 

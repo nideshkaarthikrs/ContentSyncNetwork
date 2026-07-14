@@ -3,7 +3,8 @@ import {
   Ionicons
 } from "@expo/vector-icons";
 import {
-  Image,
+  ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -12,28 +13,73 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
+import { useTune } from "../../hooks/tune/useTune";
+import { useAuthStore } from "../../store/authStore";
+
 interface Props {
   navigation: any;
   route: any;
 }
 
 export default function TuneDetailScreen({
-  navigation
+  navigation,
+  route
 }: Props) {
+  const tuneId = route?.params?.tuneId;
+  const { data: tune, isLoading, isError, error } = useTune(tuneId);
+  const deleteTune = useDeleteTune();
+  const currentUserId = useAuthStore((state) => state.user?.userId);
+
+  const isOwner = !!tune && !!currentUserId && tune.ownerId === currentUserId;
+
+  const handleDelete = () => {
+    Alert.alert("Delete Tune", "This can't be undone. Delete this tune?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteTune.mutateAsync(tuneId);
+            navigation.goBack();
+          } catch (err) {
+            Alert.alert("Error", getErrorMessage(err, "Failed to delete tune."));
+          }
+        }
+      }
+    ]);
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <ActivityIndicator color={PRIMARY} size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (isError || !tune) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>
+          {getErrorMessage(error, "Tune not found.")}
+        </Text>
+
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+          <Text style={{ color: PRIMARY, fontWeight: "700" }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         {/* Header */}
 
-        <View style={styles.imageWrapper}>
-          <Image
-            source={{
-              uri:
-                "https://picsum.photos/500/700"
-            }}
-            style={styles.coverImage}
-          />
-
+        <View style={styles.iconHeader}>
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
@@ -41,128 +87,60 @@ export default function TuneDetailScreen({
             <Feather
               name="arrow-left"
               size={22}
-              color="#FFF"
+              color="#111"
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.playButton}
-          >
-            <Ionicons
-              name="play"
-              size={34}
-              color="#FFF"
-            />
-          </TouchableOpacity>
+          {isOwner && (
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={handleDelete}
+              disabled={deleteTune.isPending}
+            >
+              <Feather
+                name="trash-2"
+                size={20}
+                color="#DC2626"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.coverPlaceholder}>
+          <Ionicons name="musical-notes" size={64} color="#FFF" />
         </View>
 
         {/* Tune Info */}
 
         <View style={styles.content}>
           <Text style={styles.title}>
-            Love Melody
+            {tune.title}
           </Text>
 
-          <View style={styles.creatorRow}>
-            <Image
-              source={{
-                uri:
-                  "https://randomuser.me/api/portraits/men/32.jpg"
-              }}
-              style={styles.avatar}
-            />
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.creator}>
-                Arjun Music
-              </Text>
-
-              <Text style={styles.role}>
-                Composer
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.followBtn}
-            >
-              <Text
-                style={styles.followText}
-              >
-                Follow
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Stats */}
-
-          <View style={styles.statsRow}>
-            <View>
-              <Text style={styles.statValue}>
-                1.2K
-              </Text>
-              <Text style={styles.statLabel}>
-                Plays
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.statValue}>
-                125
-              </Text>
-              <Text style={styles.statLabel}>
-                Lyrics
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.statValue}>
-                40
-              </Text>
-              <Text style={styles.statLabel}>
-                Singers
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.statValue}>
-                5
-              </Text>
-              <Text style={styles.statLabel}>
-                Videos
-              </Text>
-            </View>
-          </View>
-
-          {/* Description */}
-
-          <Text style={styles.sectionTitle}>
-            About Tune
-          </Text>
-
-          <Text style={styles.description}>
-            A romantic melody with soft beats
-            perfect for love songs and lyrical
-            collaborations.
+          <Text style={styles.role}>
+            {tune.status}
           </Text>
 
           {/* Tags */}
 
           <View style={styles.tagRow}>
             <View style={styles.tag}>
-              <Text>Romantic</Text>
+              <Text>{tune.genre}</Text>
             </View>
 
             <View style={styles.tag}>
-              <Text>Slow</Text>
+              <Text>{tune.mood}</Text>
             </View>
 
             <View style={styles.tag}>
-              <Text>72 BPM</Text>
+              <Text>{tune.language}</Text>
             </View>
 
-            <View style={styles.tag}>
-              <Text>C Major</Text>
-            </View>
+            {tune.bpm != null && (
+              <View style={styles.tag}>
+                <Text>{tune.bpm} BPM</Text>
+              </View>
+            )}
           </View>
 
           {/* Actions */}
@@ -175,7 +153,8 @@ export default function TuneDetailScreen({
             style={styles.actionButton}
             onPress={() =>
               navigation.navigate(
-                "LyricsSubmission"
+                "LyricsSubmission",
+                { tuneId: tune.tuneId, tuneTitle: tune.title }
               )
             }
           >
@@ -188,7 +167,8 @@ export default function TuneDetailScreen({
             style={styles.actionButton}
             onPress={() =>
               navigation.navigate(
-                "SingerStudio"
+                "SingerStudio",
+                { tuneId: tune.tuneId, tuneTitle: tune.title }
               )
             }
           >
@@ -201,7 +181,8 @@ export default function TuneDetailScreen({
             style={styles.actionButton}
             onPress={() =>
               navigation.navigate(
-                "DirectorStudio"
+                "DirectorStudio",
+                { tuneId: tune.tuneId, tuneTitle: tune.title }
               )
             }
           >
@@ -227,29 +208,48 @@ const styles = StyleSheet.create({
     marginBottom: 50
   },
 
-  imageWrapper: {
-    height: 280
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20
   },
 
-  coverImage: {
-    width: "100%",
-    height: "100%"
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center"
+  },
+
+  iconHeader: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    right: 20,
+    zIndex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between"
   },
 
   backBtn: {
-    position: "absolute",
-    top: 50,
-    left: 20
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center"
   },
 
-  playButton: {
-    position: "absolute",
-    top: "45%",
-    left: "45%",
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(0,0,0,0.45)",
+  deleteBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+
+  coverPlaceholder: {
+    height: 220,
+    backgroundColor: PRIMARY,
     justifyContent: "center",
     alignItems: "center"
   },
@@ -263,54 +263,9 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
 
-  creatorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15
-  },
-
-  avatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22,
-    marginRight: 10
-  },
-
-  creator: {
-    fontWeight: "700"
-  },
-
   role: {
-    color: "#777"
-  },
-
-  followBtn: {
-    backgroundColor: "#F3E8FF",
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8
-  },
-
-  followText: {
-    color: PRIMARY,
-    fontWeight: "700"
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 25
-  },
-
-  statValue: {
-    fontWeight: "700",
-    fontSize: 18,
-    textAlign: "center"
-  },
-
-  statLabel: {
     color: "#777",
-    textAlign: "center"
+    marginTop: 6
   },
 
   sectionTitle: {
@@ -318,11 +273,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontWeight: "700",
     fontSize: 18
-  },
-
-  description: {
-    lineHeight: 22,
-    color: "#555"
   },
 
   tagRow: {

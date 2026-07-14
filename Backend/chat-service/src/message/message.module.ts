@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
 import { MessageController } from './message.controller';
+import { MessageGateway } from './message.gateway';
 import { MessageRepository } from './message.repository';
 import { MessageService } from './message.service';
 
@@ -20,6 +21,6 @@ import { MessageService } from './message.service';
     }),
   ],
   controllers: [MessageController],
-  providers: [MessageService, MessageRepository, PrismaService, JwtStrategy],
+  providers: [MessageService, MessageRepository, MessageGateway, PrismaService, JwtStrategy],
 })
 export class MessageModule {}

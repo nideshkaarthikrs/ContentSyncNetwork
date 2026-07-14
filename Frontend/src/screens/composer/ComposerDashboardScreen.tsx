@@ -2,6 +2,7 @@ import {
   Feather
 } from "@expo/vector-icons";
 import {
+  ActivityIndicator,
   Image,
   SafeAreaView,
   ScrollView,
@@ -11,6 +12,8 @@ import {
   View
 } from "react-native";
 
+import { useMyTunes } from "../../hooks/tune/useMyTunes";
+
 interface Props {
   navigation: any;
 }
@@ -18,6 +21,9 @@ interface Props {
 export default function ComposerDashboardScreen({
   navigation
 }: Props) {
+  const { data, isLoading } = useMyTunes(1, 5);
+  const tunes = data?.tunes ?? [];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -56,7 +62,7 @@ export default function ComposerDashboardScreen({
             </Text>
 
             <Text style={styles.cardValue}>
-              24
+              {data?.total ?? "—"}
             </Text>
           </View>
 
@@ -118,57 +124,43 @@ export default function ComposerDashboardScreen({
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.tuneCard}
-        >
-          <Image
-            source={{
-              uri:
-                "https://picsum.photos/200/300?4"
-            }}
-            style={styles.tuneImage}
-          />
+        {isLoading && (
+          <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
+        )}
 
-          <View style={{ flex: 1 }}>
-            <Text style={styles.songName}>
-              Love Theme
-            </Text>
-
-            <Text style={styles.songMeta}>
-              50 Lyrics • 12 Singers
-            </Text>
-          </View>
-
-          <Text style={styles.time}>
-            2h ago
+        {!isLoading && tunes.length === 0 && (
+          <Text style={styles.emptyText}>
+            No tunes yet. Upload your first one above.
           </Text>
-        </TouchableOpacity>
+        )}
 
-        <TouchableOpacity
-          style={styles.tuneCard}
-        >
-          <Image
-            source={{
-              uri:
-                "https://picsum.photos/200/300?5"
-            }}
-            style={styles.tuneImage}
-          />
+        {tunes.map((tune) => (
+          <TouchableOpacity
+            key={tune.tuneId}
+            style={styles.tuneCard}
+            onPress={() =>
+              navigation.navigate("TuneDetail", { tuneId: tune.tuneId })
+            }
+          >
+            <View style={styles.tuneIconWrap}>
+              <Feather name="music" size={24} color={PRIMARY} />
+            </View>
 
-          <View style={{ flex: 1 }}>
-            <Text style={styles.songName}>
-              Freedom
+            <View style={{ flex: 1 }}>
+              <Text style={styles.songName}>
+                {tune.title}
+              </Text>
+
+              <Text style={styles.songMeta}>
+                {tune.genre} • {tune.mood}
+              </Text>
+            </View>
+
+            <Text style={styles.time}>
+              {tune.status}
             </Text>
-
-            <Text style={styles.songMeta}>
-              32 Lyrics • 8 Singers
-            </Text>
-          </View>
-
-          <Text style={styles.time}>
-            1d ago
-          </Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
 
         <View style={{ height: 80 }} />
       </ScrollView>
@@ -276,11 +268,21 @@ const styles = StyleSheet.create({
     marginTop: 15
   },
 
-  tuneImage: {
+  tuneIconWrap: {
     width: 60,
     height: 60,
     borderRadius: 10,
-    marginRight: 12
+    marginRight: 12,
+    backgroundColor: "#F3E8FF",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: "#888",
+    marginTop: 20,
+    paddingHorizontal: 20
   },
 
   songName: {

@@ -4,6 +4,7 @@ import BottomTabs from './BottomTabs';
 
 // Auth
 import LoginScreen from '../screens/auth/LoginScreen';
+import SignUpScreen from '../screens/auth/SignUpScreen';
 import SplashScreen from '../screens/auth/SplashScreen';
 
 // Home
@@ -38,6 +39,7 @@ import RightsDetailScreen from '../screens/marketplace/RightsDetailScreen';
 import RightsMarketplaceScreen from '../screens/marketplace/RightsMarketplaceScreen';
 
 // Projects
+import MyProjectsScreen from '../screens/projects/MyProjectsScreen';
 import ProjectWorkspaceScreen from '../screens/projects/ProjectWorkspaceScreen';
 
 // Profile
@@ -54,6 +56,8 @@ import NotificationsCenterScreen from '../screens/notifications/NotificationsCen
 
 // Settings
 import SettingsPreferencesScreen from '../screens/settings/SettingsPreferencesScreen';
+import ChangePasswordScreen from '../screens/settings/ChangePasswordScreen';
+import DefaultRoleScreen from '../screens/settings/DefaultRoleScreen';
 
 // Subscription
 import SubscriptionPlansScreen from '../screens/subscription/SubscriptionPlansScreen';
@@ -85,6 +89,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
+      />
+
+      <Stack.Screen
+        name="SignUp"
+        component={SignUpScreen}
       />
 
       <Stack.Screen
@@ -169,6 +178,11 @@ export default function AppNavigator() {
 
       {/* Projects */}
       <Stack.Screen
+        name="MyProjects"
+        component={MyProjectsScreen}
+      />
+
+      <Stack.Screen
         name="ProjectWorkspace"
         component={ProjectWorkspaceScreen}
       />
@@ -201,6 +215,16 @@ export default function AppNavigator() {
       <Stack.Screen
         name="SettingsPreferences"
         component={SettingsPreferencesScreen}
+      />
+
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+      />
+
+      <Stack.Screen
+        name="DefaultRole"
+        component={DefaultRoleScreen}
       />
 
       {/* Subscription */}

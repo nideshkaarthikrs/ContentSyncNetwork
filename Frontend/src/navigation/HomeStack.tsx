@@ -31,7 +31,7 @@ const homeModules = [
     id: '4',
     title: 'Projects',
     icon: 'folder-open-outline',
-    screen: 'ProjectWorkspace',
+    screen: 'MyProjects',
   },
   {
     id: '5',

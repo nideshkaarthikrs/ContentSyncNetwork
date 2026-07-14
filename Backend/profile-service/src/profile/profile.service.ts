@@ -34,8 +34,11 @@ export class ProfileService {
       userId: profile.userId,
       name: profile.name,
       roles: profile.roles,
+      primaryRole: profile.primaryRole,
       followers,
       rating: profile.rating,
+      publicProfile: profile.publicProfile,
+      pushNotificationsEnabled: profile.pushNotificationsEnabled,
     };
   }
 
@@ -55,8 +58,11 @@ export class ProfileService {
       userId: profile.userId,
       name: profile.name,
       roles: profile.roles,
+      primaryRole: profile.primaryRole,
       followers,
       rating: profile.rating,
+      publicProfile: profile.publicProfile,
+      pushNotificationsEnabled: profile.pushNotificationsEnabled,
     };
   }
 

@@ -41,4 +41,8 @@ export class AuthRepository {
   async findUserById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
   }
+
+  async updatePasswordHash(id: string, passwordHash: string) {
+    return this.prisma.user.update({ where: { id }, data: { passwordHash } });
+  }
 }

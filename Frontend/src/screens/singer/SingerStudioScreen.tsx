@@ -1,7 +1,5 @@
-import {
-  Feather,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
 import {
   Alert,
@@ -14,26 +12,101 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { RNFile } from "../../api/rnFile";
+import { Lyrics } from "../../api/services/lyrics.api";
+import SelectListModal from "../../components/common/SelectListModal";
+import { useTuneLyrics } from "../../hooks/lyrics/useTuneLyrics";
+import { useTunePicker } from "../../hooks/tune/useTunePicker";
+import { useAnalyzePerformance } from "../../hooks/voice/useAnalyzePerformance";
+import { useUploadPerformance } from "../../hooks/voice/useUploadPerformance";
+
 interface Props {
   navigation: any;
   route: any;
 }
 
 export default function SingerStudioScreen({
-  navigation
+  navigation,
+  route
 }: Props) {
+  const {
+    selectedTune,
+    setSelectedTune,
+    myTunes,
+    isModalOpen: tuneModalOpen,
+    open: openTuneModal,
+    close: closeTuneModal,
+  } = useTunePicker(route?.params?.tuneId, route?.params?.tuneTitle);
+  const [selectedLyrics, setSelectedLyrics] = useState<Lyrics | null>(null);
+  const [voiceFile, setVoiceFile] = useState<RNFile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const [aiEnhance, setAiEnhance] =
     useState(true);
 
   const [autoTune, setAutoTune] =
     useState(true);
 
-  const handleSubmit = () => {
-    Alert.alert(
-      "Success",
-      "Performance submitted successfully."
-    );
+  const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
+
+  const { data: tuneLyrics } = useTuneLyrics(selectedTune?.tuneId);
+  const uploadPerformance = useUploadPerformance();
+  const analyzePerformance = useAnalyzePerformance();
+
+  const pickVoiceFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/*"],
+      copyToCacheDirectory: true
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setVoiceFile({
+      uri: asset.uri,
+      name: asset.name ?? "performance",
+      type: asset.mimeType ?? "audio/mpeg"
+    });
   };
+
+  const handleSubmit = async () => {
+    if (!selectedTune) {
+      setError("Please select a tune.");
+      return;
+    }
+    if (!selectedLyrics) {
+      setError("Please select lyrics.");
+      return;
+    }
+    if (!voiceFile) {
+      setError("Please upload a voice file.");
+      return;
+    }
+    setError(null);
+
+    try {
+      const { performanceId } = await uploadPerformance.mutateAsync({
+        payload: { tuneId: selectedTune.tuneId, lyricsId: selectedLyrics.lyricsId },
+        file: voiceFile
+      });
+
+      if (aiEnhance) {
+        try {
+          await analyzePerformance.mutateAsync(performanceId);
+        } catch {
+          // Analysis is a bonus step; a failure here shouldn't block the successful submission.
+        }
+      }
+
+      Alert.alert("Success", "Performance submitted successfully.", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to submit performance."));
+    }
+  };
+
+  const isSubmitting = uploadPerformance.isPending || analyzePerformance.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,8 +139,9 @@ export default function SingerStudioScreen({
 
         <TouchableOpacity
           style={styles.selector}
+          onPress={openTuneModal}
         >
-          <Text>Love Melody</Text>
+          <Text>{selectedTune?.title ?? "Choose a tune"}</Text>
 
           <Feather
             name="chevron-right"
@@ -83,9 +157,10 @@ export default function SingerStudioScreen({
 
         <TouchableOpacity
           style={styles.selector}
+          onPress={() => selectedTune ? setLyricsModalOpen(true) : setError("Select a tune first.")}
         >
           <Text>
-            Kadhal Pookal by Anu Writer
+            {selectedLyrics ? selectedLyrics.title : "Choose lyrics"}
           </Text>
 
           <Feather
@@ -97,26 +172,13 @@ export default function SingerStudioScreen({
         {/* Step 3 */}
 
         <Text style={styles.stepTitle}>
-          3. Record / Upload
+          3. Upload Performance
         </Text>
 
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionCard}
-          >
-            <MaterialCommunityIcons
-              name="microphone"
-              size={36}
-              color="#7C3AED"
-            />
-
-            <Text style={styles.actionText}>
-              Record Voice
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
+            onPress={pickVoiceFile}
           >
             <Feather
               name="upload"
@@ -125,7 +187,7 @@ export default function SingerStudioScreen({
             />
 
             <Text style={styles.actionText}>
-              Upload File
+              {voiceFile ? voiceFile.name : "Upload File"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -171,25 +233,55 @@ export default function SingerStudioScreen({
           />
         </View>
 
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        )}
+
         {/* Submit */}
 
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmit}
+          disabled={isSubmitting}
         >
           <Text style={styles.submitText}>
-            Submit Performance
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity>
-          <Text style={styles.guidelines}>
-            Need help? View guidelines
+            {isSubmitting ? "Submitting..." : "Submit Performance"}
           </Text>
         </TouchableOpacity>
 
         <View style={{ height: 50 }} />
       </ScrollView>
+
+      <SelectListModal
+        visible={tuneModalOpen}
+        title="Select Tune"
+        items={myTunes?.tunes ?? []}
+        keyExtractor={(item) => item.tuneId}
+        labelExtractor={(item) => item.title}
+        onSelect={(item) => {
+          setSelectedTune(item);
+          setSelectedLyrics(null);
+          closeTuneModal();
+        }}
+        onClose={closeTuneModal}
+        emptyText="You haven't uploaded any tunes yet."
+      />
+
+      <SelectListModal
+        visible={lyricsModalOpen}
+        title="Select Lyrics"
+        items={tuneLyrics?.lyrics ?? []}
+        keyExtractor={(item) => item.lyricsId}
+        labelExtractor={(item) => `${item.title} (${item.language})`}
+        onSelect={(item) => {
+          setSelectedLyrics(item);
+          setLyricsModalOpen(false);
+        }}
+        onClose={() => setLyricsModalOpen(false)}
+        emptyText="No lyrics submitted for this tune yet."
+      />
     </SafeAreaView>
   );
 }
@@ -237,12 +329,12 @@ const styles = StyleSheet.create({
 
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginHorizontal: 20
   },
 
   actionCard: {
-    width: "48%",
+    width: "100%",
     height: 120,
     borderWidth: 1,
     borderColor: "#E5E7EB",
@@ -274,6 +366,13 @@ const styles = StyleSheet.create({
     marginTop: 4
   },
 
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginHorizontal: 20,
+    marginTop: 20
+  },
+
   submitButton: {
     backgroundColor: PRIMARY,
     height: 55,
@@ -281,18 +380,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: 35
+    marginTop: 20
   },
 
   submitText: {
     color: "#FFF",
     fontWeight: "700"
-  },
-
-  guidelines: {
-    textAlign: "center",
-    marginTop: 20,
-    color: PRIMARY,
-    fontWeight: "500"
   }
 });

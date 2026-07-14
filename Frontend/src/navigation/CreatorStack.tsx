@@ -55,7 +55,7 @@ const creatorModules = [
     id: '8',
     title: 'Projects',
     icon: 'folder-open-outline',
-    screen: 'ProjectWorkspace',
+    screen: 'MyProjects',
   },
   {
     id: '9',

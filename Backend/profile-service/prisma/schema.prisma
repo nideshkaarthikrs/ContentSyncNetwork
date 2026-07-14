@@ -8,14 +8,17 @@ datasource db {
 }
 
 model Profile {
-  userId    String   @id
-  name      String   @default("")
-  bio       String   @default("")
-  avatarUrl String?
-  roles     String[]
-  rating    Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userId                   String   @id
+  name                     String   @default("")
+  bio                      String   @default("")
+  avatarUrl                String?
+  roles                    String[]
+  primaryRole              String?
+  rating                   Float    @default(0)
+  publicProfile            Boolean  @default(true)
+  pushNotificationsEnabled Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 model Follow {

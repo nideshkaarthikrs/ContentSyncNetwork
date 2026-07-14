@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
 import {
   Alert,
@@ -12,9 +13,19 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { RNFile } from "../../api/rnFile";
+import SelectListModal from "../../components/common/SelectListModal";
+import { useAnalyzeTune } from "../../hooks/tune/useAnalyzeTune";
+import { useCreateTune } from "../../hooks/tune/useCreateTune";
+
 interface Props {
   navigation: any;
 }
+
+const GENRES = ["Pop", "Classical", "Folk", "Hip-Hop", "Rock", "Devotional", "Electronic", "Jazz"];
+const MOODS = ["Happy", "Sad", "Romantic", "Energetic", "Calm", "Melancholic", "Uplifting"];
+const LANGUAGES = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada"];
 
 export default function UploadTuneScreen({
   navigation
@@ -27,13 +38,76 @@ export default function UploadTuneScreen({
   const [key, setKey] = useState("");
   const [aiAnalyze, setAiAnalyze] =
     useState(true);
+  const [audioFile, setAudioFile] = useState<RNFile | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePublish = () => {
-    Alert.alert(
-      "Success",
-      "Tune published successfully"
-    );
+  const [genreModalOpen, setGenreModalOpen] = useState(false);
+  const [moodModalOpen, setMoodModalOpen] = useState(false);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
+
+  const createTune = useCreateTune();
+  const analyzeTune = useAnalyzeTune();
+
+  const pickAudio = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/flac", "audio/*"],
+      copyToCacheDirectory: true
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setAudioFile({
+      uri: asset.uri,
+      name: asset.name ?? "audio",
+      type: asset.mimeType ?? "audio/mpeg"
+    });
   };
+
+  const handlePublish = async () => {
+    if (!title || !genre || !mood || !language) {
+      setError("Please fill in title, genre, mood, and language.");
+      return;
+    }
+    if (!audioFile) {
+      setError("Please upload an audio file.");
+      return;
+    }
+    const parsedBpm = bpm ? Number(bpm) : undefined;
+    if (bpm && (!Number.isFinite(parsedBpm) || parsedBpm! <= 0)) {
+      setError("BPM must be a valid positive number.");
+      return;
+    }
+    setError(null);
+
+    try {
+      const created = await createTune.mutateAsync({
+        payload: {
+          title,
+          genre,
+          mood,
+          language,
+          bpm: parsedBpm
+        },
+        audio: audioFile
+      });
+
+      if (aiAnalyze) {
+        try {
+          await analyzeTune.mutateAsync(created.tuneId);
+        } catch {
+          // Analysis is a bonus step; a failure here shouldn't block the successful upload.
+        }
+      }
+
+      Alert.alert("Success", "Tune published successfully", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to publish tune. Please try again."));
+    }
+  };
+
+  const isSubmitting = createTune.isPending || analyzeTune.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,9 +143,10 @@ export default function UploadTuneScreen({
         <Text style={styles.label}>Genre</Text>
         <TouchableOpacity
           style={styles.dropdown}
+          onPress={() => setGenreModalOpen(true)}
         >
-          <Text style={styles.placeholder}>
-            Select genre
+          <Text style={genre ? styles.dropdownValue : styles.placeholder}>
+            {genre || "Select genre"}
           </Text>
           <Feather
             name="chevron-down"
@@ -82,9 +157,10 @@ export default function UploadTuneScreen({
         <Text style={styles.label}>Mood</Text>
         <TouchableOpacity
           style={styles.dropdown}
+          onPress={() => setMoodModalOpen(true)}
         >
-          <Text style={styles.placeholder}>
-            Select mood
+          <Text style={mood ? styles.dropdownValue : styles.placeholder}>
+            {mood || "Select mood"}
           </Text>
           <Feather
             name="chevron-down"
@@ -97,9 +173,10 @@ export default function UploadTuneScreen({
         </Text>
         <TouchableOpacity
           style={styles.dropdown}
+          onPress={() => setLanguageModalOpen(true)}
         >
-          <Text style={styles.placeholder}>
-            Select language
+          <Text style={language ? styles.dropdownValue : styles.placeholder}>
+            {language || "Select language"}
           </Text>
           <Feather
             name="chevron-down"
@@ -134,6 +211,7 @@ export default function UploadTuneScreen({
 
         <TouchableOpacity
           style={styles.uploadBox}
+          onPress={pickAudio}
         >
           <Feather
             name="upload-cloud"
@@ -142,11 +220,11 @@ export default function UploadTuneScreen({
           />
 
           <Text style={styles.uploadText}>
-            Tap to upload audio file
+            {audioFile ? audioFile.name : "Tap to upload audio file"}
           </Text>
 
           <Text style={styles.uploadSub}>
-            MP3, WAV, FLAC (Max 50MB)
+            MP3, WAV, FLAC
           </Text>
         </TouchableOpacity>
 
@@ -170,17 +248,63 @@ export default function UploadTuneScreen({
           />
         </View>
 
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        )}
+
         <TouchableOpacity
           style={styles.publishButton}
           onPress={handlePublish}
+          disabled={isSubmitting}
         >
           <Text style={styles.publishText}>
-            Publish Tune
+            {isSubmitting ? "Publishing..." : "Publish Tune"}
           </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <SelectListModal
+        visible={genreModalOpen}
+        title="Select Genre"
+        items={GENRES}
+        keyExtractor={(item) => item}
+        labelExtractor={(item) => item}
+        onSelect={(item) => {
+          setGenre(item);
+          setGenreModalOpen(false);
+        }}
+        onClose={() => setGenreModalOpen(false)}
+      />
+
+      <SelectListModal
+        visible={moodModalOpen}
+        title="Select Mood"
+        items={MOODS}
+        keyExtractor={(item) => item}
+        labelExtractor={(item) => item}
+        onSelect={(item) => {
+          setMood(item);
+          setMoodModalOpen(false);
+        }}
+        onClose={() => setMoodModalOpen(false)}
+      />
+
+      <SelectListModal
+        visible={languageModalOpen}
+        title="Select Language"
+        items={LANGUAGES}
+        keyExtractor={(item) => item}
+        labelExtractor={(item) => item}
+        onSelect={(item) => {
+          setLanguage(item);
+          setLanguageModalOpen(false);
+        }}
+        onClose={() => setLanguageModalOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -240,6 +364,10 @@ const styles = StyleSheet.create({
     color: "#888"
   },
 
+  dropdownValue: {
+    color: "#111"
+  },
+
   uploadBox: {
     marginHorizontal: 20,
     borderWidth: 1,
@@ -276,6 +404,13 @@ const styles = StyleSheet.create({
   aiDesc: {
     color: "#666",
     fontSize: 12
+  },
+
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginHorizontal: 20,
+    marginTop: 15
   },
 
   publishButton: {

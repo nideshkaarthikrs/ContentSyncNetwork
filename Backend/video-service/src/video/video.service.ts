@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { postInternal } from '../shared/internal-http.client';
 import { CreateVideoProjectDto } from './dto/create-video-project.dto';
 import { GenerateStoryboardDto } from './dto/generate-storyboard.dto';
 import { VideoRepository } from './video.repository';
@@ -17,7 +19,10 @@ function parseVideoDisplayId(videoId: string): number {
 
 @Injectable()
 export class VideoService {
-  constructor(private readonly repo: VideoRepository) {}
+  constructor(
+    private readonly repo: VideoRepository,
+    private readonly config: ConfigService,
+  ) {}
 
   async createVideoProject(directorId: string, directorUserId: string, dto: CreateVideoProjectDto) {
     const project = await this.repo.createVideoProject(directorId, directorUserId, dto);
@@ -33,6 +38,12 @@ export class VideoService {
 
   async uploadVideo(uploaderId: string, uploaderUserId: string, filename: string) {
     const video = await this.repo.createVideo(uploaderId, uploaderUserId, `/uploads/${filename}`);
+    postInternal(`${this.config.get<string>('feedService.url')}/internal/feed-items`, this.config.get<string>('internal.secret'), {
+      type: 'VIDEO',
+      sourceId: toVideoDisplayId(video.sequenceNumber),
+      actorUserId: uploaderUserId,
+      title: 'New video uploaded',
+    }).catch(() => {});
     return {
       status: 'SUCCESS',
       message: 'Video uploaded',

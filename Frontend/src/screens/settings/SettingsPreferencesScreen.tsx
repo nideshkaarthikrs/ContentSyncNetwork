@@ -2,7 +2,6 @@ import {
   Feather,
   MaterialCommunityIcons
 } from "@expo/vector-icons";
-import { useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -13,6 +12,12 @@ import {
   View
 } from "react-native";
 
+import { useLogout } from "../../hooks/auth/useLogout";
+import { useProfile } from "../../hooks/profile/useProfile";
+import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
+import { useAuthStore } from "../../store/authStore";
+import { usePreferencesStore } from "../../store/preferencesStore";
+
 interface Props {
   navigation: any;
 }
@@ -20,16 +25,27 @@ interface Props {
 export default function SettingsPreferencesScreen({
   navigation
 }: Props) {
-  const [darkMode, setDarkMode] =
-    useState(false);
+  const logout = useLogout();
 
-  const [notificationsEnabled,
-    setNotificationsEnabled] =
-    useState(true);
+  const handleLogout = async () => {
+    try {
+      await logout.mutateAsync();
+    } catch {
+      // useLogout clears the local session even if the server call fails, so the user can
+      // still proceed to Login below — no need to surface a network error here.
+    }
+    navigation.replace("Login");
+  };
 
-  const [publicProfile,
-    setPublicProfile] =
-    useState(true);
+  const darkMode = usePreferencesStore((state) => state.darkMode);
+  const setDarkMode = usePreferencesStore((state) => state.setDarkMode);
+
+  const userId = useAuthStore((state) => state.user?.userId);
+  const { data: profile } = useProfile(userId);
+  const updateProfile = useUpdateProfile(userId);
+
+  const notificationsEnabled = profile?.pushNotificationsEnabled ?? true;
+  const publicProfile = profile?.publicProfile ?? true;
 
   const MenuItem = ({
     icon,
@@ -136,6 +152,7 @@ export default function SettingsPreferencesScreen({
         <MenuItem
           icon="lock-outline"
           title="Change Password"
+          screen="ChangePassword"
         />
 
         {/* Preferences */}
@@ -154,19 +171,15 @@ export default function SettingsPreferencesScreen({
         <SwitchItem
           icon="bell-outline"
           title="Notifications"
-          value={
-            notificationsEnabled
-          }
-          onChange={
-            setNotificationsEnabled
-          }
+          value={notificationsEnabled}
+          onChange={(value: boolean) => updateProfile.mutate({ pushNotificationsEnabled: value })}
         />
 
         <SwitchItem
           icon="eye-outline"
           title="Public Profile"
           value={publicProfile}
-          onChange={setPublicProfile}
+          onChange={(value: boolean) => updateProfile.mutate({ publicProfile: value })}
         />
 
         {/* Payments */}
@@ -200,6 +213,7 @@ export default function SettingsPreferencesScreen({
         <MenuItem
           icon="music-note"
           title="Default Role"
+          screen="DefaultRole"
         />
 
         <MenuItem
@@ -226,9 +240,11 @@ export default function SettingsPreferencesScreen({
 
         <TouchableOpacity
           style={styles.logoutButton}
+          onPress={handleLogout}
+          disabled={logout.isPending}
         >
           <Text style={styles.logoutText}>
-            Logout
+            {logout.isPending ? "Logging out..." : "Logout"}
           </Text>
         </TouchableOpacity>
 

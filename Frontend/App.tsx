@@ -1,13 +1,29 @@
 import "react-native-gesture-handler";
 
 import { NavigationContainer } from "@react-navigation/native";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+
+import { queryClient } from "./src/api/queryClient";
 import AppNavigator from "./src/navigation/AppNavigator";
+import { useAuthStore } from "./src/store/authStore";
+import { usePreferencesStore } from "./src/store/preferencesStore";
 
 export default function App() {
+  const hydrate = useAuthStore((state) => state.hydrate);
+  const hydratePreferences = usePreferencesStore((state) => state.hydrate);
+
+  useEffect(() => {
+    hydrate();
+    hydratePreferences();
+  }, [hydrate, hydratePreferences]);
+
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </QueryClientProvider>
   );
 }
 

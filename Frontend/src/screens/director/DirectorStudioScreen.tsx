@@ -2,6 +2,7 @@ import {
   Feather,
   MaterialCommunityIcons
 } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   Alert,
@@ -15,12 +16,22 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { RNFile } from "../../api/rnFile";
+import SelectListModal from "../../components/common/SelectListModal";
+import { useTunePicker } from "../../hooks/tune/useTunePicker";
+import { useCreateVideoProject } from "../../hooks/video/useCreateVideoProject";
+import { useGenerateStoryboard } from "../../hooks/video/useGenerateStoryboard";
+import { useUploadVideo } from "../../hooks/video/useUploadVideo";
+
 interface Props {
   navigation: any;
+  route: any;
 }
 
 export default function DirectorStudioScreen({
-  navigation
+  navigation,
+  route
 }: Props) {
   const [useAIStoryboard, setUseAIStoryboard] =
     useState(true);
@@ -29,13 +40,84 @@ export default function DirectorStudioScreen({
     useState(true);
 
   const [concept, setConcept] = useState("");
+  const {
+    selectedTune,
+    setSelectedTune,
+    myTunes,
+    isModalOpen: tuneModalOpen,
+    open: openTuneModal,
+    close: closeTuneModal,
+  } = useTunePicker(route?.params?.tuneId, route?.params?.tuneTitle);
+  const [moodBoard, setMoodBoard] = useState<RNFile | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    Alert.alert(
-      "Success",
-      "Video concept submitted successfully."
-    );
+  const createVideoProject = useCreateVideoProject();
+  const uploadVideo = useUploadVideo();
+  const generateStoryboard = useGenerateStoryboard();
+
+  const pickMoodBoard = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError("Photo library permission is required to upload a mood board.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setMoodBoard({
+      uri: asset.uri,
+      name: asset.fileName ?? "moodboard.jpg",
+      type: asset.mimeType ?? "image/jpeg"
+    });
   };
+
+  const handleSubmit = async () => {
+    if (!selectedTune) {
+      setError("Please select a tune.");
+      return;
+    }
+    if (!concept.trim()) {
+      setError("Please describe your story concept.");
+      return;
+    }
+    setError(null);
+
+    try {
+      await createVideoProject.mutateAsync({
+        songId: selectedTune.tuneId,
+        title: concept.slice(0, 60)
+      });
+
+      if (moodBoard) {
+        try {
+          await uploadVideo.mutateAsync(moodBoard);
+        } catch {
+          // Mood board upload is a bonus step; a failure here shouldn't block the project creation.
+        }
+      }
+
+      if (useAIStoryboard) {
+        try {
+          await generateStoryboard.mutateAsync(selectedTune.tuneId);
+        } catch {
+          // Storyboard generation is a bonus step; a failure here shouldn't block the submission.
+        }
+      }
+
+      Alert.alert("Success", "Video concept submitted successfully.", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to submit video proposal."));
+    }
+  };
+
+  const isSubmitting = createVideoProject.isPending || uploadVideo.isPending || generateStoryboard.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,25 +148,11 @@ export default function DirectorStudioScreen({
           Selected Tune
         </Text>
 
-        <TouchableOpacity style={styles.selector}>
-          <Text>Love Melody</Text>
-
-          <Feather
-            name="chevron-right"
-            size={18}
-          />
-        </TouchableOpacity>
-
-        {/* Lyrics */}
-
-        <Text style={styles.label}>
-          Selected Lyrics
-        </Text>
-
-        <TouchableOpacity style={styles.selector}>
-          <Text>
-            Kadhal Pookal - Submitted Lyrics
-          </Text>
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={openTuneModal}
+        >
+          <Text>{selectedTune?.title ?? "Choose a tune"}</Text>
 
           <Feather
             name="chevron-right"
@@ -98,7 +166,7 @@ export default function DirectorStudioScreen({
           Mood Board / Reference
         </Text>
 
-        <TouchableOpacity style={styles.uploadBox}>
+        <TouchableOpacity style={styles.uploadBox} onPress={pickMoodBoard}>
           <MaterialCommunityIcons
             name="image-multiple-outline"
             size={40}
@@ -106,11 +174,11 @@ export default function DirectorStudioScreen({
           />
 
           <Text style={styles.uploadText}>
-            Upload Images / References
+            {moodBoard ? moodBoard.name : "Upload Images / References"}
           </Text>
 
           <Text style={styles.uploadSub}>
-            JPG, PNG, PDF
+            JPG, PNG
           </Text>
         </TouchableOpacity>
 
@@ -171,34 +239,40 @@ export default function DirectorStudioScreen({
           />
         </View>
 
-        {/* Generate */}
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() =>
-            navigation.navigate(
-              "AIAssistant"
-            )
-          }
-        >
-          <Text style={styles.secondaryText}>
-            Generate Storyboard
+        {error && (
+          <Text style={styles.errorText}>
+            {error}
           </Text>
-        </TouchableOpacity>
+        )}
 
         {/* Submit */}
 
         <TouchableOpacity
           style={styles.primaryButton}
           onPress={handleSubmit}
+          disabled={isSubmitting}
         >
           <Text style={styles.primaryText}>
-            Submit Video Proposal
+            {isSubmitting ? "Submitting..." : "Submit Video Proposal"}
           </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <SelectListModal
+        visible={tuneModalOpen}
+        title="Select Tune"
+        items={myTunes?.tunes ?? []}
+        keyExtractor={(item) => item.tuneId}
+        labelExtractor={(item) => item.title}
+        onSelect={(item) => {
+          setSelectedTune(item);
+          closeTuneModal();
+        }}
+        onClose={closeTuneModal}
+        emptyText="You haven't uploaded any tunes yet."
+      />
     </SafeAreaView>
   );
 }
@@ -290,25 +364,16 @@ const styles = StyleSheet.create({
     fontSize: 12
   },
 
-  secondaryButton: {
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
     marginHorizontal: 20,
-    marginTop: 25,
-    borderWidth: 1,
-    borderColor: PRIMARY,
-    height: 55,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-
-  secondaryText: {
-    color: PRIMARY,
-    fontWeight: "700"
+    marginTop: 20
   },
 
   primaryButton: {
     marginHorizontal: 20,
-    marginTop: 15,
+    marginTop: 20,
     backgroundColor: PRIMARY,
     height: 55,
     borderRadius: 10,

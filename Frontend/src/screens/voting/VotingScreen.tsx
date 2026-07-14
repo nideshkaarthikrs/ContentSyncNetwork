@@ -3,6 +3,7 @@ import {
 } from "@expo/vector-icons";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   SafeAreaView,
@@ -13,32 +14,37 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useCastVote } from "../../hooks/voting/useCastVote";
+import { useVoteResults } from "../../hooks/voting/useVoteResults";
+
 interface Props {
   navigation: any;
 }
 
+const ENTITY_TYPE = "PERFORMANCE";
+
+// No backend endpoint lists voting candidates — voting-service only tracks votes per arbitrary entityId.
+// These entityIds are stand-ins for real performance IDs; casting and results are wired to live endpoints.
 const submissions = [
   {
-    id: "1",
+    id: "PER3001",
     name: "Priya Singer",
     role: "Singer",
-    votes: 1245,
     image:
       "https://randomuser.me/api/portraits/women/44.jpg"
   },
   {
-    id: "2",
+    id: "PER3002",
     name: "Arun Vocalist",
     role: "Singer",
-    votes: 1088,
     image:
       "https://randomuser.me/api/portraits/men/32.jpg"
   },
   {
-    id: "3",
+    id: "PER3003",
     name: "Meera Voice",
     role: "Singer",
-    votes: 945,
     image:
       "https://randomuser.me/api/portraits/women/65.jpg"
   }
@@ -49,8 +55,12 @@ export default function VotingScreen({
 }: Props) {
   const [selectedId, setSelectedId] =
     useState<string | null>(null);
+  const [votedForId, setVotedForId] = useState<string | null>(null);
 
-  const submitVote = () => {
+  const castVote = useCastVote();
+  const { data: results, isLoading: resultsLoading } = useVoteResults(votedForId ?? undefined);
+
+  const submitVote = async () => {
     if (!selectedId) {
       Alert.alert(
         "Select Candidate",
@@ -59,10 +69,16 @@ export default function VotingScreen({
       return;
     }
 
-    Alert.alert(
-      "Vote Submitted",
-      "Your vote has been recorded."
-    );
+    try {
+      await castVote.mutateAsync({ entityType: ENTITY_TYPE, entityId: selectedId });
+      setVotedForId(selectedId);
+      Alert.alert(
+        "Vote Submitted",
+        "Your vote has been recorded."
+      );
+    } catch (err) {
+      Alert.alert("Vote Failed", getErrorMessage(err, "You may have already voted for this entry."));
+    }
   };
 
   return (
@@ -134,43 +150,40 @@ export default function VotingScreen({
                 </Text>
               </View>
 
-              <View
-                style={styles.voteInfo}
-              >
-                <Text
-                  style={styles.voteCount}
+              {votedForId === item.id && (
+                <View
+                  style={styles.voteInfo}
                 >
-                  {item.votes}
-                </Text>
+                  {resultsLoading ? (
+                    <ActivityIndicator size="small" color={PRIMARY} />
+                  ) : (
+                    <>
+                      <Text
+                        style={styles.voteCount}
+                      >
+                        {results?.votes ?? "—"}
+                      </Text>
 
-                <Text
-                  style={styles.voteLabel}
-                >
-                  Votes
-                </Text>
-              </View>
+                      <Text
+                        style={styles.voteLabel}
+                      >
+                        Rank #{results?.rank ?? "—"}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              )}
             </TouchableOpacity>
           );
         })}
 
-        {/* Voting Status */}
-
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>
-            Voting Ends In
-          </Text>
-
-          <Text style={styles.timer}>
-            03 Days 12 Hours
-          </Text>
-        </View>
-
         <TouchableOpacity
           style={styles.voteButton}
           onPress={submitVote}
+          disabled={castVote.isPending}
         >
           <Text style={styles.voteText}>
-            Submit Vote
+            {castVote.isPending ? "Submitting..." : "Submit Vote"}
           </Text>
         </TouchableOpacity>
 
@@ -251,7 +264,8 @@ const styles = StyleSheet.create({
   },
 
   voteInfo: {
-    alignItems: "center"
+    alignItems: "center",
+    minWidth: 60
   },
 
   voteCount: {
@@ -263,24 +277,10 @@ const styles = StyleSheet.create({
     color: "#666"
   },
 
-  statsCard: {
-    margin: 20,
-    alignItems: "center"
-  },
-
-  statsTitle: {
-    color: "#666"
-  },
-
-  timer: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginTop: 8
-  },
-
   voteButton: {
     backgroundColor: PRIMARY,
     marginHorizontal: 20,
+    marginTop: 25,
     height: 55,
     borderRadius: 10,
     justifyContent: "center",

@@ -6,4 +6,13 @@ export default () => ({
   jwt: {
     secret: process.env.JWT_SECRET || 'change-me',
   },
+  internal: {
+    secret: process.env.INTERNAL_SERVICE_SECRET || 'change-me',
+  },
+  tuneService: {
+    url: process.env.TUNE_SERVICE_URL || 'http://localhost:3003',
+  },
+  notificationService: {
+    url: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3013',
+  },
 });

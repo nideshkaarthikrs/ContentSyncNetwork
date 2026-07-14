@@ -5,6 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class FollowRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async exists(followerId: string, followingId: string) {
+    const record = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    return !!record;
+  }
+
   async follow(followerId: string, followingId: string) {
     return this.prisma.follow.upsert({
       where: { followerId_followingId: { followerId, followingId } },

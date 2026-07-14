@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { InternalAuthGuard } from '../auth/internal-auth.guard';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
+import { InternalProjectController } from './internal-project.controller';
 import { ProjectController } from './project.controller';
 import { ProjectRepository } from './project.repository';
 import { ProjectService } from './project.service';
@@ -19,7 +21,7 @@ import { ProjectService } from './project.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [ProjectController],
-  providers: [ProjectService, ProjectRepository, PrismaService, JwtStrategy],
+  controllers: [ProjectController, InternalProjectController],
+  providers: [ProjectService, ProjectRepository, PrismaService, JwtStrategy, InternalAuthGuard],
 })
 export class ProjectModule {}

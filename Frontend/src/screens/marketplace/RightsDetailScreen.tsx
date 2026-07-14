@@ -2,14 +2,23 @@ import {
   Feather,
   MaterialCommunityIcons
 } from "@expo/vector-icons";
+import { useState } from "react";
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { RightsListing } from "../../api/services/rights.api";
+import { useDrmToken } from "../../hooks/rights/useDrmToken";
+import { usePurchaseRights } from "../../hooks/rights/usePurchaseRights";
+import { useRaiseClaim } from "../../hooks/rights/useRaiseClaim";
 
 interface Props {
   navigation: any;
@@ -20,19 +29,63 @@ export default function RightsDetailScreen({
   navigation,
   route
 }: Props) {
+  const listing: RightsListing | undefined = route?.params?.listing;
 
-  const rights = {
-    title: "Love Melody",
-    owner: "Arjun Music",
-    category: "Full Song Rights",
-    price: "₹75,000",
-    duration: "Lifetime",
-    usage: [
-      "Commercial Usage",
-      "Streaming Platforms",
-      "OTT Distribution",
-      "YouTube Monetization"
-    ]
+  const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [claimReason, setClaimReason] = useState("");
+  const [claimStatus, setClaimStatus] = useState<string | null>(null);
+
+  const purchaseRights = usePurchaseRights();
+  const drmToken = useDrmToken();
+  const raiseClaim = useRaiseClaim();
+
+  if (!listing) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <Text style={styles.owner}>No listing selected.</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+          <Text style={{ color: PRIMARY, fontWeight: "700" }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const handlePurchase = async () => {
+    try {
+      const result = await purchaseRights.mutateAsync({
+        assetId: listing.assetId,
+        licenseType: listing.licenseType
+      });
+      setPurchaseStatus(result.status);
+      Alert.alert("Purchase Initiated", `Status: ${result.status}`);
+    } catch (err) {
+      Alert.alert("Purchase Failed", getErrorMessage(err));
+    }
+  };
+
+  const handleGetStream = async () => {
+    try {
+      const result = await drmToken.mutateAsync(listing.assetId);
+      setStreamUrl(result.streamUrl);
+    } catch (err) {
+      Alert.alert("Failed to get streaming token", getErrorMessage(err));
+    }
+  };
+
+  const handleRaiseClaim = async () => {
+    if (!claimReason.trim()) {
+      Alert.alert("Enter a reason", "Please describe the copyright issue.");
+      return;
+    }
+    try {
+      const result = await raiseClaim.mutateAsync({ assetId: listing.assetId, reason: claimReason });
+      setClaimStatus(result.status);
+      setClaimReason("");
+      Alert.alert("Claim Submitted", `Claim ${result.claimId} is ${result.status}.`);
+    } catch (err) {
+      Alert.alert("Failed to submit claim", getErrorMessage(err));
+    }
   };
 
   return (
@@ -55,133 +108,105 @@ export default function RightsDetailScreen({
             Rights Detail
           </Text>
 
-          <TouchableOpacity>
-            <Feather
-              name="share-2"
-              size={20}
-            />
-          </TouchableOpacity>
+          <View style={{ width: 20 }} />
         </View>
 
         {/* Hero Card */}
 
         <View style={styles.heroCard}>
           <Text style={styles.songTitle}>
-            {rights.title}
+            {listing.assetId}
           </Text>
 
           <Text style={styles.category}>
-            {rights.category}
+            {listing.assetType} • {listing.licenseType}
           </Text>
 
           <Text style={styles.price}>
-            {rights.price}
+            ₹{listing.price.toLocaleString("en-IN")}
           </Text>
         </View>
 
-        {/* Owner */}
+        {/* Details */}
 
         <Text style={styles.sectionTitle}>
-          Rights Owner
+          Listing Details
         </Text>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoText}>
-            {rights.owner}
-          </Text>
+          <Row title="Territory" value={listing.territory} />
+          <Row title="Term" value={listing.term} />
+          <Row title="Status" value={purchaseStatus ?? listing.status} />
         </View>
-
-        {/* Ownership */}
-
-        <Text style={styles.sectionTitle}>
-          Ownership Split
-        </Text>
-
-        <View style={styles.infoCard}>
-          <Row
-            title="Composer"
-            value="40%"
-          />
-          <Row
-            title="Singer"
-            value="20%"
-          />
-          <Row
-            title="Lyricist"
-            value="20%"
-          />
-          <Row
-            title="Producer"
-            value="20%"
-          />
-        </View>
-
-        {/* Usage Rights */}
-
-        <Text style={styles.sectionTitle}>
-          Usage Rights
-        </Text>
-
-        <View style={styles.infoCard}>
-          {rights.usage.map(item => (
-            <View
-              key={item}
-              style={styles.usageRow}
-            >
-              <MaterialCommunityIcons
-                name="check-circle"
-                color="#10B981"
-                size={20}
-              />
-
-              <Text
-                style={styles.usageText}
-              >
-                {item}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Contract */}
-
-        <Text style={styles.sectionTitle}>
-          Contract Details
-        </Text>
-
-        <TouchableOpacity
-          style={styles.contractCard}
-        >
-          <MaterialCommunityIcons
-            name="file-document-outline"
-            size={28}
-            color="#7C3AED"
-          />
-
-          <Text style={styles.contractText}>
-            View Digital Contract
-          </Text>
-        </TouchableOpacity>
 
         {/* Purchase */}
 
         <TouchableOpacity
           style={styles.buyButton}
+          onPress={handlePurchase}
+          disabled={purchaseRights.isPending}
         >
           <Text style={styles.buyText}>
-            Purchase Rights
+            {purchaseRights.isPending ? "Processing..." : "Purchase Rights"}
           </Text>
         </TouchableOpacity>
 
+        {/* DRM Streaming */}
+
+        <Text style={styles.sectionTitle}>
+          Streaming Access
+        </Text>
+
+        <TouchableOpacity
+          style={styles.contractCard}
+          onPress={handleGetStream}
+        >
+          <MaterialCommunityIcons
+            name="play-network-outline"
+            size={28}
+            color="#7C3AED"
+          />
+
+          <Text style={styles.contractText}>
+            {drmToken.isPending ? "Generating..." : "Get Streaming Token"}
+          </Text>
+        </TouchableOpacity>
+
+        {streamUrl && (
+          <Text style={styles.streamUrl} numberOfLines={2}>
+            {streamUrl}
+          </Text>
+        )}
+
+        {/* Copyright Claim */}
+
+        <Text style={styles.sectionTitle}>
+          Report a Copyright Issue
+        </Text>
+
+        <TextInput
+          style={styles.claimInput}
+          placeholder="Describe the issue..."
+          multiline
+          value={claimReason}
+          onChangeText={setClaimReason}
+        />
+
         <TouchableOpacity
           style={styles.secondaryButton}
+          onPress={handleRaiseClaim}
+          disabled={raiseClaim.isPending}
         >
           <Text
             style={styles.secondaryText}
           >
-            Contact Owner
+            {raiseClaim.isPending ? "Submitting..." : "Submit Claim"}
           </Text>
         </TouchableOpacity>
+
+        {claimStatus && (
+          <Text style={styles.claimStatus}>Claim status: {claimStatus}</Text>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -210,6 +235,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     marginTop: 36,
     marginBottom: 50
+  },
+
+  centered: {
+    justifyContent: "center",
+    alignItems: "center"
   },
 
   header: {
@@ -266,7 +296,7 @@ const styles = StyleSheet.create({
     padding: 16
   },
 
-  infoText: {
+  owner: {
     fontWeight: "600"
   },
 
@@ -274,16 +304,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 8
-  },
-
-  usageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 8
-  },
-
-  usageText: {
-    marginLeft: 10
   },
 
   contractCard: {
@@ -299,6 +319,29 @@ const styles = StyleSheet.create({
   contractText: {
     marginLeft: 12,
     fontWeight: "600"
+  },
+
+  streamUrl: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    color: "#666",
+    fontSize: 12
+  },
+
+  claimInput: {
+    marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    minHeight: 80,
+    padding: 15,
+    textAlignVertical: "top"
+  },
+
+  claimStatus: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    color: "#666"
   },
 
   buyButton: {

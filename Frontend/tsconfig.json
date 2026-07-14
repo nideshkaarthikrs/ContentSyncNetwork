@@ -4,7 +4,6 @@
     "strict": true,
     "baseUrl": ".",
     "jsx": "react-jsx",
-    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true

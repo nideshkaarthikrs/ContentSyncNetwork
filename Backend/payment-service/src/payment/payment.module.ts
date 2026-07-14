@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
+import { InternalTransactionController } from './internal-transaction.controller';
 import { PaymentRepository } from './payment.repository';
 import { PaymentService } from './payment.service';
 import { RevenueController } from './revenue.controller';
@@ -21,7 +22,7 @@ import { WebhookController } from './webhook.controller';
       inject: [ConfigService],
     }),
   ],
-  controllers: [SubscriptionController, WebhookController, RevenueController],
+  controllers: [SubscriptionController, WebhookController, RevenueController, InternalTransactionController],
   providers: [PaymentService, PaymentRepository, PrismaService, JwtStrategy],
 })
 export class PaymentModule {}

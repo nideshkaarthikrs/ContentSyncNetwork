@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -13,4 +13,16 @@ export class UpdateProfileDto {
   @IsArray()
   @IsString({ each: true })
   roles?: string[];
+
+  @IsOptional()
+  @IsString()
+  primaryRole?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  publicProfile?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pushNotificationsEnabled?: boolean;
 }

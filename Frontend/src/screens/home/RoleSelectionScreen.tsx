@@ -12,49 +12,63 @@ import {
   View
 } from "react-native";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { Role } from "../../api/services/auth.api";
+import { useRegister } from "../../hooks/auth/useRegister";
+
 interface Props {
   navigation: any;
+  route: any;
 }
 
-const roles = [
+const roles: { id: string; title: string; icon: string; role: Role }[] = [
   {
     id: "1",
     title: "Composer",
-    icon: "music-note"
+    icon: "music-note",
+    role: "COMPOSER"
   },
   {
     id: "2",
     title: "Lyric Writer",
-    icon: "lead-pencil"
+    icon: "lead-pencil",
+    role: "LYRICIST"
   },
   {
     id: "3",
     title: "Singer",
-    icon: "microphone"
+    icon: "microphone",
+    role: "SINGER"
   },
   {
     id: "4",
     title: "Director",
-    icon: "video-outline"
+    icon: "video-outline",
+    role: "DIRECTOR"
   },
   {
     id: "5",
     title: "Producer",
-    icon: "movie-open-outline"
+    icon: "movie-open-outline",
+    role: "PRODUCER"
   },
   {
     id: "6",
     title: "Audience",
-    icon: "account-group-outline"
+    icon: "account-group-outline",
+    role: "AUDIENCE"
   }
 ];
 
 export default function RoleSelectionScreen({
-  navigation
+  navigation,
+  route
 }: Props) {
   const [selectedRoles, setSelectedRoles] = useState<
     string[]
   >([]);
+  const [error, setError] = useState<string | null>(null);
+  const register = useRegister();
 
   const toggleRole = (id: string) => {
     if (selectedRoles.includes(id)) {
@@ -63,6 +77,33 @@ export default function RoleSelectionScreen({
       );
     } else {
       setSelectedRoles([...selectedRoles, id]);
+    }
+  };
+
+  const handleContinue = async () => {
+    const draft = route?.params?.draft;
+    if (!draft) {
+      setError("Missing sign-up details. Please start over from Sign Up.");
+      return;
+    }
+    if (selectedRoles.length === 0) {
+      setError("Select at least one role.");
+      return;
+    }
+    setError(null);
+
+    const mappedRoles = roles
+      .filter(item => selectedRoles.includes(item.id))
+      .map(item => item.role);
+
+    try {
+      await register.mutateAsync({
+        ...draft,
+        roles: mappedRoles
+      });
+      navigation.replace("Login");
+    } catch (err) {
+      setError(getErrorMessage(err, "Registration failed. Please try again."));
     }
   };
 
@@ -134,14 +175,19 @@ export default function RoleSelectionScreen({
         }}
       />
 
+      {error && (
+        <Text style={styles.errorText}>
+          {error}
+        </Text>
+      )}
+
       <TouchableOpacity
         style={styles.continueButton}
-        onPress={() =>
-          navigation.replace("Main")
-        }
+        onPress={handleContinue}
+        disabled={register.isPending}
       >
         <Text style={styles.continueText}>
-          Continue
+          {register.isPending ? "Creating account..." : "Continue"}
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -207,6 +253,12 @@ const styles = StyleSheet.create({
   checkboxSelected: {
     backgroundColor: PRIMARY,
     borderColor: PRIMARY
+  },
+
+  errorText: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginBottom: 15
   },
 
   continueButton: {

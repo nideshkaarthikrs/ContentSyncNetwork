@@ -6,3 +6,23 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+enum FeedItemType {
+  TUNE
+  VIDEO
+  PROJECT
+}
+
+model FeedItem {
+  id             String       @id @default(uuid())
+  sequenceNumber Int          @default(autoincrement())
+  type           FeedItemType
+  sourceId       String
+  actorUserId    String
+  title          String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([createdAt])
+  @@map("feed_items")
+}

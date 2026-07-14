@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   Animated,
   StatusBar,
@@ -8,25 +8,39 @@ import {
   View
 } from "react-native";
 
+import { useAuthStore } from "../../store/authStore";
+
 interface Props {
   navigation: any;
 }
 
+const MIN_SPLASH_MS = 2500;
+
 export default function SplashScreen({ navigation }: Props) {
   const scaleAnim = new Animated.Value(0.6);
+  const token = useAuthStore(state => state.token);
+  const isHydrated = useAuthStore(state => state.isHydrated);
+  const mountedAt = useRef(Date.now());
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true
     }).start();
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const elapsed = Date.now() - mountedAt.current;
+    const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
 
     const timer = setTimeout(() => {
-      navigation.replace("Login");
-    }, 2500);
+      navigation.replace(token ? "Main" : "Login");
+    }, remaining);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isHydrated, token]);
 
   return (
     <View style={styles.container}>

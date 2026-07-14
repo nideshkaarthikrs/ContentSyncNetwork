@@ -63,3 +63,24 @@ model WithdrawalRequest {
 
   @@map("withdrawal_requests")
 }
+
+enum TransactionType {
+  SUBSCRIPTION
+  MARKETPLACE_SALE
+  ROYALTY
+}
+
+model Transaction {
+  id             String          @id @default(uuid())
+  sequenceNumber Int             @default(autoincrement())
+  userId         String
+  userDisplayId  String
+  type           TransactionType
+  amount         Int
+  sourceId       String?
+  reference      String?
+  createdAt      DateTime        @default(now())
+
+  @@index([userId])
+  @@map("transactions")
+}

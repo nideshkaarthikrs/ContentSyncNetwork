@@ -16,6 +16,8 @@ import {
 
 import { FeedItem, FeedItemType } from "../../api/services/feed.api";
 import { useHomeFeed } from "../../hooks/feed/useHomeFeed";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 interface Props {
   navigation: any;
@@ -39,10 +41,12 @@ function timeAgo(dateString: string): string {
 }
 
 function FeedCard({ item }: { item: FeedItem }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   return (
     <View style={styles.feedCard}>
       <View style={styles.feedIconWrap}>
-        <MaterialIcons name={FEED_ICON[item.type]} size={20} color={PRIMARY} />
+        <MaterialIcons name={FEED_ICON[item.type]} size={20} color={theme.colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.feedTitle}>{item.title}</Text>
@@ -57,6 +61,8 @@ function FeedCard({ item }: { item: FeedItem }) {
 export default function HomeFeedScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const { data: feed, isLoading } = useHomeFeed();
   const posts = feed?.data ?? [];
 
@@ -75,7 +81,7 @@ export default function HomeFeedScreen({
               <Feather
                 name="search"
                 size={20}
-                color="#111"
+                color={theme.colors.text}
               />
             </TouchableOpacity>
 
@@ -83,7 +89,7 @@ export default function HomeFeedScreen({
               <Ionicons
                 name="notifications-outline"
                 size={22}
-                color="#111"
+                color={theme.colors.text}
               />
             </TouchableOpacity>
           </View>
@@ -95,7 +101,7 @@ export default function HomeFeedScreen({
           <Feather
             name="search"
             size={18}
-            color="#999"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -113,12 +119,12 @@ export default function HomeFeedScreen({
         </View>
 
         {isLoading && (
-          <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
+          <ActivityIndicator style={{ marginTop: 20 }} color={theme.colors.primary} />
         )}
 
         {!isLoading && posts.length === 0 && (
           <View style={styles.emptyState}>
-            <Ionicons name="musical-notes-outline" size={40} color="#CCC" />
+            <Ionicons name="musical-notes-outline" size={40} color={theme.colors.border} />
             <Text style={styles.emptyText}>
               Nothing in your feed yet. Follow creators and upload tunes to see activity here.
             </Text>
@@ -142,19 +148,17 @@ export default function HomeFeedScreen({
         <MaterialIcons
           name="add"
           size={30}
-          color="#FFF"
+          color="#FFFFFF"
         />
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.background,
     marginTop: 36,
     marginBottom: 50
   },
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 28,
     fontWeight: "800",
-    color: PRIMARY
+    color: theme.colors.primary
   },
 
   headerIcons: {
@@ -184,7 +188,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 15,
     height: 50
@@ -192,7 +196,8 @@ const styles = StyleSheet.create({
 
   searchInput: {
     flex: 1,
-    marginLeft: 10
+    marginLeft: 10,
+    color: theme.colors.text
   },
 
   sectionHeader: {
@@ -205,7 +210,8 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   emptyState: {
@@ -215,7 +221,7 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "#888",
+    color: theme.colors.textMuted,
     textAlign: "center",
     marginTop: 12,
     lineHeight: 20
@@ -228,16 +234,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "#F0F0F0"
+    borderColor: theme.colors.border
   },
 
   feedIconWrap: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F3E8FF",
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12
@@ -246,11 +252,11 @@ const styles = StyleSheet.create({
   feedTitle: {
     fontWeight: "600",
     fontSize: 15,
-    color: "#111"
+    color: theme.colors.text
   },
 
   feedMeta: {
-    color: "#999",
+    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2
   },
@@ -262,7 +268,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5

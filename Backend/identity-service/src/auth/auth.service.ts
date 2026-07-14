@@ -73,7 +73,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.repo.findUserByEmail(dto.email);
+    const user = await this.repo.findUserByIdentifier(dto.email);
     if (!user) {
       throw new UnauthorizedException({
         status: 'ERROR',

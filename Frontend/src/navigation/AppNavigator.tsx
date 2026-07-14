@@ -58,6 +58,9 @@ import NotificationsCenterScreen from '../screens/notifications/NotificationsCen
 import SettingsPreferencesScreen from '../screens/settings/SettingsPreferencesScreen';
 import ChangePasswordScreen from '../screens/settings/ChangePasswordScreen';
 import DefaultRoleScreen from '../screens/settings/DefaultRoleScreen';
+import ComingSoonScreen from '../screens/settings/ComingSoonScreen';
+import HelpCenterScreen from '../screens/settings/HelpCenterScreen';
+import TermsConditionsScreen from '../screens/settings/TermsConditionsScreen';
 
 // Subscription
 import SubscriptionPlansScreen from '../screens/subscription/SubscriptionPlansScreen';
@@ -225,6 +228,21 @@ export default function AppNavigator() {
       <Stack.Screen
         name="DefaultRole"
         component={DefaultRoleScreen}
+      />
+
+      <Stack.Screen
+        name="ComingSoon"
+        component={ComingSoonScreen}
+      />
+
+      <Stack.Screen
+        name="HelpCenter"
+        component={HelpCenterScreen}
+      />
+
+      <Stack.Screen
+        name="TermsConditions"
+        component={TermsConditionsScreen}
       />
 
       {/* Subscription */}

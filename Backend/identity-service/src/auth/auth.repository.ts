@@ -10,6 +10,12 @@ export class AuthRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  async findUserByIdentifier(identifier: string) {
+    return this.prisma.user.findFirst({
+      where: { OR: [{ email: identifier }, { mobile: identifier }] },
+    });
+  }
+
   async createUser(data: {
     fullName: string;
     email: string;

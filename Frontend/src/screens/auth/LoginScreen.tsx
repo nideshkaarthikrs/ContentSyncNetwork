@@ -16,6 +16,8 @@ import {
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useLogin } from "../../hooks/auth/useLogin";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 interface Props {
   navigation: any;
@@ -24,7 +26,9 @@ interface Props {
 export default function LoginScreen({
   navigation
 }: Props) {
-  const [email, setEmail] = useState("");
+  const theme = useTheme();
+  const styles = getStyles(theme);
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const login = useLogin();
@@ -32,7 +36,7 @@ export default function LoginScreen({
   const handleLogin = async () => {
     setError(null);
     try {
-      await login.mutateAsync({ email, password });
+      await login.mutateAsync({ email: identifier, password });
       navigation.replace("Main");
     } catch (err) {
       setError(getErrorMessage(err, "Invalid email or password."));
@@ -60,14 +64,15 @@ export default function LoginScreen({
           <MaterialCommunityIcons
             name="account-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
             placeholder="Email or Mobile"
             style={styles.input}
-            value={email}
-            onChangeText={setEmail}
+            value={identifier}
+            onChangeText={setIdentifier}
+            autoCapitalize="none"
           />
         </View>
 
@@ -75,7 +80,7 @@ export default function LoginScreen({
           <MaterialCommunityIcons
             name="lock-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -159,12 +164,10 @@ export default function LoginScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 24,
     marginTop: 36,
     marginBottom: 50
@@ -174,12 +177,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "700",
     textAlign: "center",
-    color: "#111827"
+    color: theme.colors.text
   },
 
   subHeading: {
     textAlign: "center",
-    color: "#6B7280",
+    color: theme.colors.textMuted,
     marginTop: 10,
     marginBottom: 40
   },
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 15,
@@ -198,23 +201,24 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 15
+    fontSize: 15,
+    color: theme.colors.text
   },
 
   forgot: {
     alignSelf: "flex-end",
-    color: "#6B7280",
+    color: theme.colors.textMuted,
     marginBottom: 25
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center",
     marginBottom: 15
   },
 
   loginButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 56,
     borderRadius: 12,
     justifyContent: "center",
@@ -222,7 +226,7 @@ const styles = StyleSheet.create({
   },
 
   loginText: {
-    color: "#FFF",
+    color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 16
   },
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   orText: {
     textAlign: "center",
     marginVertical: 25,
-    color: "#6B7280"
+    color: theme.colors.textMuted
   },
 
   socialRow: {
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center"
   },
@@ -256,11 +260,11 @@ const styles = StyleSheet.create({
   },
 
   footerText: {
-    color: "#6B7280"
+    color: theme.colors.textMuted
   },
 
   signupText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700",
     marginLeft: 5
   }

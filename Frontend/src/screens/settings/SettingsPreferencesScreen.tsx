@@ -17,6 +17,8 @@ import { useProfile } from "../../hooks/profile/useProfile";
 import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
 import { useAuthStore } from "../../store/authStore";
 import { usePreferencesStore } from "../../store/preferencesStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 interface Props {
   navigation: any;
@@ -25,6 +27,8 @@ interface Props {
 export default function SettingsPreferencesScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const logout = useLogout();
 
   const handleLogout = async () => {
@@ -50,20 +54,21 @@ export default function SettingsPreferencesScreen({
   const MenuItem = ({
     icon,
     title,
-    screen
+    screen,
+    params
   }: any) => (
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() =>
         screen &&
-        navigation.navigate(screen)
+        navigation.navigate(screen, params)
       }
     >
       <View style={styles.menuLeft}>
         <MaterialCommunityIcons
           name={icon}
           size={22}
-          color="#7C3AED"
+          color={theme.colors.primary}
         />
 
         <Text style={styles.menuText}>
@@ -74,7 +79,7 @@ export default function SettingsPreferencesScreen({
       <Feather
         name="chevron-right"
         size={20}
-        color="#888"
+        color={theme.colors.textMuted}
       />
     </TouchableOpacity>
   );
@@ -90,7 +95,7 @@ export default function SettingsPreferencesScreen({
         <MaterialCommunityIcons
           name={icon}
           size={22}
-          color="#7C3AED"
+          color={theme.colors.primary}
         />
 
         <Text style={styles.menuText}>
@@ -102,7 +107,7 @@ export default function SettingsPreferencesScreen({
         value={value}
         onValueChange={onChange}
         trackColor={{
-          true: "#7C3AED"
+          true: theme.colors.primary
         }}
       />
     </View>
@@ -122,6 +127,7 @@ export default function SettingsPreferencesScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -147,6 +153,8 @@ export default function SettingsPreferencesScreen({
         <MenuItem
           icon="shield-account"
           title="Verification"
+          screen="ComingSoon"
+          params={{ title: "Verification" }}
         />
 
         <MenuItem
@@ -191,11 +199,15 @@ export default function SettingsPreferencesScreen({
         <MenuItem
           icon="bank-outline"
           title="Bank Account"
+          screen="ComingSoon"
+          params={{ title: "Bank Account" }}
         />
 
         <MenuItem
           icon="credit-card-outline"
           title="Payment Methods"
+          screen="ComingSoon"
+          params={{ title: "Payment Methods" }}
         />
 
         <MenuItem
@@ -231,11 +243,13 @@ export default function SettingsPreferencesScreen({
         <MenuItem
           icon="help-circle-outline"
           title="Help Center"
+          screen="HelpCenter"
         />
 
         <MenuItem
           icon="file-document-outline"
           title="Terms & Conditions"
+          screen="TermsConditions"
         />
 
         <TouchableOpacity
@@ -254,12 +268,10 @@ export default function SettingsPreferencesScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.background,
     marginTop: 36,
     marginBottom: 50
   },
@@ -273,14 +285,15 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   section: {
     marginTop: 20,
     marginHorizontal: 20,
     marginBottom: 10,
-    color: "#666",
+    color: theme.colors.textMuted,
     fontWeight: "700",
     fontSize: 13
   },
@@ -292,7 +305,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE"
+    borderBottomColor: theme.colors.border
   },
 
   menuLeft: {
@@ -302,11 +315,12 @@ const styles = StyleSheet.create({
 
   menuText: {
     marginLeft: 12,
-    fontSize: 15
+    fontSize: 15,
+    color: theme.colors.text
   },
 
   logoutButton: {
-    backgroundColor: "#EF4444",
+    backgroundColor: theme.colors.danger,
     marginHorizontal: 20,
     marginTop: 30,
     height: 52,
@@ -316,7 +330,7 @@ const styles = StyleSheet.create({
   },
 
   logoutText: {
-    color: "#FFF",
+    color: "#FFFFFF",
     fontWeight: "700"
   }
 });

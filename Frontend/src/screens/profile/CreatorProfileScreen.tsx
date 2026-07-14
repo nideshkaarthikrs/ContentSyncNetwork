@@ -13,9 +13,12 @@ import {
 } from "react-native";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
+import { serviceBaseUrl } from "../../config/services";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUploadPhoto } from "../../hooks/profile/useUploadPhoto";
 import { useAuthStore } from "../../store/authStore";
+
+const FALLBACK_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
 
 interface Props {
   navigation: any;
@@ -27,6 +30,10 @@ export default function CreatorProfileScreen({
   const userId = useAuthStore((state) => state.user?.userId);
   const { data: profile, isLoading } = useProfile(userId);
   const uploadPhoto = useUploadPhoto(userId);
+
+  const avatarUri = profile?.avatarUrl
+    ? `${serviceBaseUrl("profile")}${profile.avatarUrl}`
+    : FALLBACK_AVATAR;
 
   const handleChangePhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -79,8 +86,7 @@ export default function CreatorProfileScreen({
           <TouchableOpacity onPress={handleChangePhoto} disabled={uploadPhoto.isPending}>
             <Image
               source={{
-                uri:
-                  "https://randomuser.me/api/portraits/men/32.jpg"
+                uri: avatarUri
               }}
               style={styles.profileImage}
             />

@@ -39,6 +39,7 @@ export class ProfileService {
       rating: profile.rating,
       publicProfile: profile.publicProfile,
       pushNotificationsEnabled: profile.pushNotificationsEnabled,
+      avatarUrl: profile.avatarUrl,
     };
   }
 
@@ -63,6 +64,7 @@ export class ProfileService {
       rating: profile.rating,
       publicProfile: profile.publicProfile,
       pushNotificationsEnabled: profile.pushNotificationsEnabled,
+      avatarUrl: profile.avatarUrl,
     };
   }
 

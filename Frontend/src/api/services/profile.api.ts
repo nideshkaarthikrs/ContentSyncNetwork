@@ -11,6 +11,7 @@ export interface Profile {
   rating: number;
   publicProfile: boolean;
   pushNotificationsEnabled: boolean;
+  avatarUrl: string | null;
 }
 
 export interface UpdateProfilePayload {

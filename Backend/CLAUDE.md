@@ -97,7 +97,7 @@ Profile-service auto-creates a `Profile` record on the first `GET /profiles/:use
 `identity-service` has `PATCH /auth/change-password` (JWT required), body `{ currentPassword, newPassword }` — verifies the current password against the stored bcrypt hash (401 `CSN-1004` if it doesn't match), then re-hashes and stores the new one.
 
 ### PostgreSQL port convention
-Each service runs its own PostgreSQL container on a unique host port:
+Each service's Postgres container is on a unique host port (republished by `docker-compose.dev.yml` for local DB tools; not published at all in the production `docker-compose.yml`, since only nginx needs to be reachable from outside the Docker network):
 - identity-service: 5432
 - profile-service: 5433
 - tune-service: 5434
@@ -112,21 +112,30 @@ Each service runs its own PostgreSQL container on a unique host port:
 - payment-service: 5443
 - notification-service: 5444
 
-### Local development (identity-service)
+### Local development (all services)
+All 13 services now run behind a single nginx gateway instead of 13 separate
+ports, via Docker Compose (`docker-compose.yml` + `docker-compose.dev.yml` for
+hot reload):
 ```bash
-cd csn-backend/identity-service
-docker compose up -d          # start PostgreSQL on port 5432
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3001
+cd Backend
+./scripts/dev-up.sh     # docker compose up -d --build (all 13 services + DBs + nginx)
+./scripts/dev-down.sh   # docker compose down
 ```
+Everything is reachable at `http://localhost:${GATEWAY_PORT:-8080}/<service>/...`
+(e.g. `/identity/auth/login`, `/chat/projects/:id/messages`), routed by
+`Backend/nginx/nginx.conf`. There is no per-service `docker-compose.yml`
+anymore — Postgres + the app container for every service live in the root
+`docker-compose.yml`. Each service's `.env` still supplies its secrets
+(`JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, etc.) via `env_file`; only
+`DATABASE_URL` and inter-service `*_SERVICE_URL` vars are overridden in
+Compose to point at the other containers by Docker DNS name instead of
+`localhost`.
+
+### Local development (identity-service)
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5432, reachable at http://localhost:${GATEWAY_PORT:-8080}/identity/ through the gateway.
 
 ### Local development (profile-service)
-```bash
-cd csn-backend/profile-service
-docker compose up -d          # start PostgreSQL on port 5433
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3002
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5433, reachable at http://localhost:${GATEWAY_PORT:-8080}/profile/ through the gateway.
 
 ## Pending Decisions
 
@@ -146,32 +155,17 @@ npm run start:dev             # start on port 3002
 lyrics-service `POST /lyrics/:lyricsId/approve` gates on `COMPOSER` role from JWT. Full cross-service ownership check (confirm caller owns the tune) is deferred — would require an HTTP call to tune-service.
 
 ### Local development (tune-service)
-```bash
-cd csn-backend/tune-service
-docker compose up -d          # start PostgreSQL on port 5434
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3003
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5434, reachable at http://localhost:${GATEWAY_PORT:-8080}/tune/ through the gateway.
 
 ### Local development (lyrics-service)
-```bash
-cd csn-backend/lyrics-service
-docker compose up -d          # start PostgreSQL on port 5435
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3004
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5435, reachable at http://localhost:${GATEWAY_PORT:-8080}/lyrics/ through the gateway.
 
 ### PerformanceId format
 - `performanceId` in responses = `"PER" + (3000 + sequenceNumber)` → e.g. `PER3001`, `PER3002`
 - Path params use the display ID; service parses: strip `PER`, parseInt, subtract 3000, query by `sequenceNumber`
 
 ### Local development (voice-service)
-```bash
-cd csn-backend/voice-service
-docker compose up -d          # start PostgreSQL on port 5436
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3005
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5436, reachable at http://localhost:${GATEWAY_PORT:-8080}/voice/ through the gateway.
 
 ### VideoId format
 - `videoId` in responses = `"VID" + (1000 + sequenceNumber)` → e.g. `VID1001`, `VID1002`
@@ -189,12 +183,7 @@ video-service has three controllers in one file (`video.controller.ts`) under a 
 - `AiController` (`/ai`) — `POST /ai/storyboards` (stub)
 
 ### Local development (video-service)
-```bash
-cd csn-backend/video-service
-docker compose up -d          # start PostgreSQL on port 5437
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3006
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5437, reachable at http://localhost:${GATEWAY_PORT:-8080}/video/ through the gateway.
 
 ### ProjectId format
 - `projectId` in responses = `"PRJ" + (5000 + sequenceNumber)` → e.g. `PRJ5001`, `PRJ5002`
@@ -271,20 +260,10 @@ service does this.
   `smoke-test.sh` is HTTP-only and does not exercise this WS flow.
 
 ### Local development (project-service)
-```bash
-cd csn-backend/project-service
-docker compose up -d          # start PostgreSQL on port 5438
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3007
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5438, reachable at http://localhost:${GATEWAY_PORT:-8080}/project/ through the gateway.
 
 ### Local development (chat-service)
-```bash
-cd csn-backend/chat-service
-docker compose up -d          # start PostgreSQL on port 5439
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3008
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5439, reachable at http://localhost:${GATEWAY_PORT:-8080}/chat/ through the gateway.
 
 ### VoteId format
 - `voteId` in responses = `"VOT" + (7000 + sequenceNumber)` → e.g. `VOT7001`, `VOT7002`
@@ -300,12 +279,7 @@ Single `VoteController` at `/votes`:
 - Rank = 1 + count of distinct entityIds of same entityType with a higher vote count
 
 ### Local development (voting-service)
-```bash
-cd csn-backend/voting-service
-docker compose up -d          # start PostgreSQL on port 5440
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3009
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5440, reachable at http://localhost:${GATEWAY_PORT:-8080}/voting/ through the gateway.
 
 ### feed-service controller layout
 `FeedController` at `/feed` — all three endpoints require JWT, backed by a real
@@ -329,12 +303,7 @@ npm run start:dev             # start on port 3009
 - `feedItemId` in responses = `"FED" + (12000 + sequenceNumber)` → e.g. `FED12001`, `FED12002`
 
 ### Local development (feed-service)
-```bash
-cd csn-backend/feed-service
-docker compose up -d          # start PostgreSQL on port 5441
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3010
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5441, reachable at http://localhost:${GATEWAY_PORT:-8080}/feed/ through the gateway.
 
 ### LicenseId format
 - `listingId` in responses = `"LIC" + (8000 + sequenceNumber)` → e.g. `LIC8001`, `LIC8002`
@@ -378,12 +347,7 @@ Three controllers in one `RightsModule`:
 - DRM token generation is stateless (`randomUUID()` from Node crypto); token not persisted (MVP stub)
 
 ### Local development (rights-service)
-```bash
-cd csn-backend/rights-service
-docker compose up -d          # start PostgreSQL on port 5442
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3011
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5442, reachable at http://localhost:${GATEWAY_PORT:-8080}/rights/ through the gateway.
 
 ### SubscriptionId format
 - `subscriptionId` in responses = `"SUB" + (10000 + sequenceNumber)` → e.g. `SUB10001`, `SUB10002`
@@ -411,12 +375,7 @@ Four controllers in one `PaymentModule`:
 - Four Prisma models: `Subscription`, `WebhookEvent`, `WithdrawalRequest`, `Transaction`
 
 ### Local development (payment-service)
-```bash
-cd csn-backend/payment-service
-docker compose up -d          # start PostgreSQL on port 5443
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3012
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5443, reachable at http://localhost:${GATEWAY_PORT:-8080}/payment/ through the gateway.
 
 ### NotificationId format
 - `notificationId` in responses = `"NOT" + (16000 + sequenceNumber)` → e.g. `NOT16001`, `NOT16002`
@@ -437,12 +396,7 @@ npm run start:dev             # start on port 3012
   - voting-service, on vote cast for a `TUNE` entity (`VOTE_RECEIVED`) — see the exception noted in "Internal service-to-service auth" below
 
 ### Local development (notification-service)
-```bash
-cd csn-backend/notification-service
-docker compose up -d          # start PostgreSQL on port 5444
-npx prisma migrate dev        # run migrations
-npm run start:dev             # start on port 3013
-```
+Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5444, reachable at http://localhost:${GATEWAY_PORT:-8080}/notification/ through the gateway.
 
 ### JWT_SECRET alignment requirement
 All service `.env` files must use the **same** `JWT_SECRET` value as identity-service. The `.env.example` templates ship with a placeholder (`your-jwt-secret-change-in-production`) which is **not** the real dev secret — replace it when creating a new service `.env`. If a service keeps returning 401 on valid tokens, a mismatched JWT_SECRET is the first thing to check.

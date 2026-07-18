@@ -17,7 +17,7 @@ interface AuthenticatedUser {
   name: string;
 }
 
-@WebSocketGateway({ cors: { origin: true } })
+@WebSocketGateway({ cors: { origin: true }, path: '/chat/socket.io' })
 export class MessageGateway implements OnGatewayInit {
   @WebSocketServer()
   server: Server;

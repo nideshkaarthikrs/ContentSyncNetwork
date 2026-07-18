@@ -1,0 +1,524 @@
+# Runs all 13 CSN backend services + their Postgres DBs + an nginx gateway
+# behind a single published port, so hosting only has to expose one port
+# instead of 13. Service code is unchanged: every *_SERVICE_URL and
+# DATABASE_URL env var was already overridable (see each service's
+# src/config/configuration.ts), so this file just points them at the other
+# containers' Docker-DNS names instead of localhost.
+#
+# Usage:
+#   Production-style (built images):      docker compose up -d --build
+#   Local dev (hot reload, add override):  docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Secrets (JWT_SECRET, INTERNAL_SERVICE_SECRET, DB creds, etc.) come from each
+# service's own .env file (env_file: below) -- nothing secret lives in this
+# file, so it's safe to commit.
+
+x-postgres-defaults: &postgres-defaults
+  image: postgres:16-alpine
+  networks: [csn-net]
+  restart: unless-stopped
+
+x-app-defaults: &app-defaults
+  networks: [csn-net]
+  restart: unless-stopped
+
+x-migrate-defaults: &migrate-defaults
+  networks: [csn-net]
+  restart: "no"
+  command: ["npx", "prisma", "migrate", "deploy"]
+
+services:
+  # ---------------------------------------------------------------- identity
+  identity-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_identity
+    volumes:
+      - identity_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_identity"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  identity-migrate:
+    <<: *migrate-defaults
+    build: { context: ./identity-service, target: builder }
+    env_file: ./identity-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@identity-db:5432/csn_identity
+    depends_on:
+      identity-db: { condition: service_healthy }
+
+  identity-service:
+    <<: *app-defaults
+    build: { context: ./identity-service }
+    env_file: ./identity-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@identity-db:5432/csn_identity
+    depends_on:
+      identity-migrate: { condition: service_completed_successfully }
+    expose: ["3001"]
+
+  # ----------------------------------------------------------------- profile
+  profile-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_profile
+    volumes:
+      - profile_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_profile"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  profile-migrate:
+    <<: *migrate-defaults
+    build: { context: ./profile-service, target: builder }
+    env_file: ./profile-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@profile-db:5432/csn_profile
+    depends_on:
+      profile-db: { condition: service_healthy }
+
+  profile-service:
+    <<: *app-defaults
+    build: { context: ./profile-service }
+    env_file: ./profile-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@profile-db:5432/csn_profile
+      NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    depends_on:
+      profile-migrate: { condition: service_completed_successfully }
+    expose: ["3002"]
+
+  # -------------------------------------------------------------------- tune
+  tune-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_tune
+    volumes:
+      - tune_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_tune"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  tune-migrate:
+    <<: *migrate-defaults
+    build: { context: ./tune-service, target: builder }
+    env_file: ./tune-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@tune-db:5432/csn_tune
+    depends_on:
+      tune-db: { condition: service_healthy }
+
+  tune-service:
+    <<: *app-defaults
+    build: { context: ./tune-service }
+    env_file: ./tune-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@tune-db:5432/csn_tune
+      FEED_SERVICE_URL: http://feed-service:3010
+    depends_on:
+      tune-migrate: { condition: service_completed_successfully }
+    expose: ["3003"]
+
+  # ------------------------------------------------------------------ lyrics
+  lyrics-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_lyrics
+    volumes:
+      - lyrics_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_lyrics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lyrics-migrate:
+    <<: *migrate-defaults
+    build: { context: ./lyrics-service, target: builder }
+    env_file: ./lyrics-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@lyrics-db:5432/csn_lyrics
+    depends_on:
+      lyrics-db: { condition: service_healthy }
+
+  lyrics-service:
+    <<: *app-defaults
+    build: { context: ./lyrics-service }
+    env_file: ./lyrics-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@lyrics-db:5432/csn_lyrics
+    depends_on:
+      lyrics-migrate: { condition: service_completed_successfully }
+    expose: ["3004"]
+
+  # ------------------------------------------------------------------- voice
+  voice-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_voice
+    volumes:
+      - voice_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_voice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  voice-migrate:
+    <<: *migrate-defaults
+    build: { context: ./voice-service, target: builder }
+    env_file: ./voice-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@voice-db:5432/csn_voice
+    depends_on:
+      voice-db: { condition: service_healthy }
+
+  voice-service:
+    <<: *app-defaults
+    build: { context: ./voice-service }
+    env_file: ./voice-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@voice-db:5432/csn_voice
+    depends_on:
+      voice-migrate: { condition: service_completed_successfully }
+    expose: ["3005"]
+
+  # ------------------------------------------------------------------- video
+  video-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_video
+    volumes:
+      - video_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_video"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  video-migrate:
+    <<: *migrate-defaults
+    build: { context: ./video-service, target: builder }
+    env_file: ./video-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@video-db:5432/csn_video
+    depends_on:
+      video-db: { condition: service_healthy }
+
+  video-service:
+    <<: *app-defaults
+    build: { context: ./video-service }
+    env_file: ./video-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@video-db:5432/csn_video
+      FEED_SERVICE_URL: http://feed-service:3010
+    depends_on:
+      video-migrate: { condition: service_completed_successfully }
+    expose: ["3006"]
+
+  # ----------------------------------------------------------------- project
+  project-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_project
+    volumes:
+      - project_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_project"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  project-migrate:
+    <<: *migrate-defaults
+    build: { context: ./project-service, target: builder }
+    env_file: ./project-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@project-db:5432/csn_project
+    depends_on:
+      project-db: { condition: service_healthy }
+
+  project-service:
+    <<: *app-defaults
+    build: { context: ./project-service }
+    env_file: ./project-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@project-db:5432/csn_project
+      FEED_SERVICE_URL: http://feed-service:3010
+      NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    depends_on:
+      project-migrate: { condition: service_completed_successfully }
+    expose: ["3007"]
+
+  # -------------------------------------------------------------------- chat
+  chat-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_chat
+    volumes:
+      - chat_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_chat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chat-migrate:
+    <<: *migrate-defaults
+    build: { context: ./chat-service, target: builder }
+    env_file: ./chat-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@chat-db:5432/csn_chat
+    depends_on:
+      chat-db: { condition: service_healthy }
+
+  chat-service:
+    <<: *app-defaults
+    build: { context: ./chat-service }
+    env_file: ./chat-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@chat-db:5432/csn_chat
+      PROJECT_SERVICE_URL: http://project-service:3007
+    depends_on:
+      chat-migrate: { condition: service_completed_successfully }
+    expose: ["3008"]
+
+  # ------------------------------------------------------------------ voting
+  voting-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_voting
+    volumes:
+      - voting_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_voting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  voting-migrate:
+    <<: *migrate-defaults
+    build: { context: ./voting-service, target: builder }
+    env_file: ./voting-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@voting-db:5432/csn_voting
+    depends_on:
+      voting-db: { condition: service_healthy }
+
+  voting-service:
+    <<: *app-defaults
+    build: { context: ./voting-service }
+    env_file: ./voting-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@voting-db:5432/csn_voting
+      TUNE_SERVICE_URL: http://tune-service:3003
+      NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    depends_on:
+      voting-migrate: { condition: service_completed_successfully }
+    expose: ["3009"]
+
+  # -------------------------------------------------------------------- feed
+  feed-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_feed
+    volumes:
+      - feed_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_feed"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  feed-migrate:
+    <<: *migrate-defaults
+    build: { context: ./feed-service, target: builder }
+    env_file: ./feed-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@feed-db:5432/csn_feed
+    depends_on:
+      feed-db: { condition: service_healthy }
+
+  feed-service:
+    <<: *app-defaults
+    build: { context: ./feed-service }
+    env_file: ./feed-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@feed-db:5432/csn_feed
+    depends_on:
+      feed-migrate: { condition: service_completed_successfully }
+    expose: ["3010"]
+
+  # ------------------------------------------------------------------ rights
+  rights-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_rights
+    volumes:
+      - rights_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_rights"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rights-migrate:
+    <<: *migrate-defaults
+    build: { context: ./rights-service, target: builder }
+    env_file: ./rights-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@rights-db:5432/csn_rights
+    depends_on:
+      rights-db: { condition: service_healthy }
+
+  rights-service:
+    <<: *app-defaults
+    build: { context: ./rights-service }
+    env_file: ./rights-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@rights-db:5432/csn_rights
+      PAYMENT_SERVICE_URL: http://payment-service:3012
+      NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    depends_on:
+      rights-migrate: { condition: service_completed_successfully }
+    expose: ["3011"]
+
+  # ----------------------------------------------------------------- payment
+  payment-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_payment
+    volumes:
+      - payment_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_payment"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  payment-migrate:
+    <<: *migrate-defaults
+    build: { context: ./payment-service, target: builder }
+    env_file: ./payment-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@payment-db:5432/csn_payment
+    depends_on:
+      payment-db: { condition: service_healthy }
+
+  payment-service:
+    <<: *app-defaults
+    build: { context: ./payment-service }
+    env_file: ./payment-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@payment-db:5432/csn_payment
+    depends_on:
+      payment-migrate: { condition: service_completed_successfully }
+    expose: ["3012"]
+
+  # ------------------------------------------------------------ notification
+  notification-db:
+    <<: *postgres-defaults
+    environment:
+      POSTGRES_USER: csn
+      POSTGRES_PASSWORD: csn_pass
+      POSTGRES_DB: csn_notification
+    volumes:
+      - notification_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csn -d csn_notification"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  notification-migrate:
+    <<: *migrate-defaults
+    build: { context: ./notification-service, target: builder }
+    env_file: ./notification-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@notification-db:5432/csn_notification
+    depends_on:
+      notification-db: { condition: service_healthy }
+
+  notification-service:
+    <<: *app-defaults
+    build: { context: ./notification-service }
+    env_file: ./notification-service/.env
+    environment:
+      DATABASE_URL: postgresql://csn:csn_pass@notification-db:5432/csn_notification
+    depends_on:
+      notification-migrate: { condition: service_completed_successfully }
+    expose: ["3013"]
+
+  # ------------------------------------------------------------------ nginx
+  nginx:
+    image: nginx:alpine
+    networks: [csn-net]
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - identity-service
+      - profile-service
+      - tune-service
+      - lyrics-service
+      - voice-service
+      - video-service
+      - project-service
+      - chat-service
+      - voting-service
+      - feed-service
+      - rights-service
+      - payment-service
+      - notification-service
+
+networks:
+  csn-net:
+    driver: bridge
+
+volumes:
+  identity_pgdata:
+  profile_pgdata:
+  tune_pgdata:
+  lyrics_pgdata:
+  voice_pgdata:
+  video_pgdata:
+  project_pgdata:
+  chat_pgdata:
+  voting_pgdata:
+  feed_pgdata:
+  rights_pgdata:
+  payment_pgdata:
+  notification_pgdata:

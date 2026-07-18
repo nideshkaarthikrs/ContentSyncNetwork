@@ -1,0 +1,77 @@
+# Local-dev override: hot-reload instead of the production build, plus
+# Postgres ports republished to the host for local DB tools (matching the
+# port convention documented in CLAUDE.md).
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Each app service builds from the Dockerfile's `builder` stage (which still
+# has devDependencies + the Nest CLI, unlike the slim production stage) and
+# bind-mounts only its `src/` directory so edits on the host take effect via
+# `nest start --watch` without needing an image rebuild. Deliberately NOT
+# bind-mounting the whole service directory (with an anonymous volume over
+# node_modules to "protect" it): that shadow trick doesn't reliably keep the
+# image's Linux-built native addons (e.g. bcrypt) from being replaced by the
+# host's own node_modules on every Docker Compose/Desktop combination --
+# mounting only src/ sidesteps the problem instead of fighting it. Schema or
+# dependency changes need a rebuild (`dev-up.sh` already always passes
+# --build), same as before.
+x-dev-app: &dev-app
+  build: { target: builder }
+  command: ["npm", "run", "start:dev"]
+  environment:
+    NODE_ENV: development
+
+services:
+  identity-service:
+    <<: *dev-app
+    volumes: [./identity-service/src:/app/src]
+  profile-service:
+    <<: *dev-app
+    volumes: [./profile-service/src:/app/src]
+  tune-service:
+    <<: *dev-app
+    volumes: [./tune-service/src:/app/src]
+  lyrics-service:
+    <<: *dev-app
+    volumes: [./lyrics-service/src:/app/src]
+  voice-service:
+    <<: *dev-app
+    volumes: [./voice-service/src:/app/src]
+  video-service:
+    <<: *dev-app
+    volumes: [./video-service/src:/app/src]
+  project-service:
+    <<: *dev-app
+    volumes: [./project-service/src:/app/src]
+  chat-service:
+    <<: *dev-app
+    volumes: [./chat-service/src:/app/src]
+  voting-service:
+    <<: *dev-app
+    volumes: [./voting-service/src:/app/src]
+  feed-service:
+    <<: *dev-app
+    volumes: [./feed-service/src:/app/src]
+  rights-service:
+    <<: *dev-app
+    volumes: [./rights-service/src:/app/src]
+  payment-service:
+    <<: *dev-app
+    volumes: [./payment-service/src:/app/src]
+  notification-service:
+    <<: *dev-app
+    volumes: [./notification-service/src:/app/src]
+
+  identity-db: { ports: ["5432:5432"] }
+  profile-db: { ports: ["5433:5432"] }
+  tune-db: { ports: ["5434:5432"] }
+  lyrics-db: { ports: ["5435:5432"] }
+  voice-db: { ports: ["5436:5432"] }
+  video-db: { ports: ["5437:5432"] }
+  project-db: { ports: ["5438:5432"] }
+  chat-db: { ports: ["5439:5432"] }
+  voting-db: { ports: ["5440:5432"] }
+  feed-db: { ports: ["5441:5432"] }
+  rights-db: { ports: ["5442:5432"] }
+  payment-db: { ports: ["5443:5432"] }
+  notification-db: { ports: ["5444:5432"] }

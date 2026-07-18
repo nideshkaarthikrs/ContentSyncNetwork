@@ -3,14 +3,14 @@ import {
   MaterialCommunityIcons
 } from "@expo/vector-icons";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useLogout } from "../../hooks/auth/useLogout";
 import { useProfile } from "../../hooks/profile/useProfile";

@@ -7,12 +7,12 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useProfile } from "../../hooks/profile/useProfile";

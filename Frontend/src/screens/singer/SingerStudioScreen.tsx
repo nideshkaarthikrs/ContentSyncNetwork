@@ -3,14 +3,14 @@ import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";

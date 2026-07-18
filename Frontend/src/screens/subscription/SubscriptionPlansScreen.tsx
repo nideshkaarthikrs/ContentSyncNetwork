@@ -5,13 +5,13 @@ import {
 import { useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { SubscriptionPlan } from "../../api/services/payment.api";

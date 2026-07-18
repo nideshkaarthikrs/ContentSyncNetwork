@@ -5,12 +5,12 @@ import {
 import { useState } from "react";
 import {
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { Role } from "../../api/services/auth.api";

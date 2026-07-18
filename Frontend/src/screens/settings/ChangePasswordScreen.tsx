@@ -5,13 +5,13 @@ import {
 import { useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useChangePassword } from "../../hooks/auth/useChangePassword";

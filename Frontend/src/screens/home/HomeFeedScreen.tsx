@@ -5,14 +5,14 @@ import {
 } from "@expo/vector-icons";
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FeedItem, FeedItemType } from "../../api/services/feed.api";
 import { useHomeFeed } from "../../hooks/feed/useHomeFeed";

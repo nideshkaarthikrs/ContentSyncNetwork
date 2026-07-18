@@ -2,12 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import {
   FlatList,
   Modal,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface SelectListModalProps<T> {
   visible: boolean;

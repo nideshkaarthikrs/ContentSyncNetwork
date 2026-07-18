@@ -3,13 +3,13 @@ import {
   MaterialCommunityIcons
 } from "@expo/vector-icons";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Props {
   navigation: any;

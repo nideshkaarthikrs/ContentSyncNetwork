@@ -5,12 +5,12 @@ import {
 import {
   ActivityIndicator,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Notification, NotificationType } from "../../api/services/notification.api";
 import { useMarkAllRead } from "../../hooks/notifications/useMarkAllRead";

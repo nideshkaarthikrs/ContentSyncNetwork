@@ -14,9 +14,9 @@ The system is split into an independently deployable **microservices backend** a
 
 ## Backend
 
-Each service in `Backend/` is a standalone NestJS app with its own PostgreSQL database, Prisma schema, and `.env`.
+Each service in `Backend/` is a standalone NestJS app with its own PostgreSQL database, Prisma schema, and `.env`. All 13 run behind a single **nginx gateway** (`http://localhost:8080` by default) — from outside Docker, that's the *only* port you ever talk to; each service is reached through it by path prefix (`/identity/...`, `/tune/...`, etc.) rather than its own port. The "Internal port" column below is where each service listens *inside* the Docker network only — it's not reachable directly unless you run that one service bare-metal (see below).
 
-| Service | Responsibility | Port |
+| Service | Responsibility | Internal port |
 |---|---|---|
 | identity-service | Auth, registration, JWT | 3001 |
 | profile-service | User profiles, follows | 3002 |
@@ -33,8 +33,6 @@ Each service in `Backend/` is a standalone NestJS app with its own PostgreSQL da
 | notification-service | In-app notifications | 3013 |
 
 **Stack:** NestJS + TypeScript, Prisma ORM, PostgreSQL (one DB per service), JWT auth (`@nestjs/jwt` + `passport-jwt`), `class-validator` DTOs.
-
-All 13 services, their Postgres databases, and an **nginx gateway** run together via Docker Compose (`Backend/docker-compose.yml`). The gateway is the single entry point — every service is reached through it by path prefix (e.g. `/identity/...`, `/tune/...`) instead of its own port; the individual service ports (3001–3013) in the table above are only reachable inside the Docker network.
 
 ### Running the backend
 

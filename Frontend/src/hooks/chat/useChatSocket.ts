@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 
-import { serviceBaseUrl } from "../../config/services";
+import { apiOrigin } from "../../config/services";
 import { refreshOnce } from "../../api/client";
 import { useAuthStore } from "../../store/authStore";
 import { ChatMessage } from "../../api/services/chat.api";
@@ -21,7 +21,12 @@ export function useChatSocket(projectId: string | undefined) {
   useEffect(() => {
     if (!projectId) return;
 
-    const socket: Socket = io(serviceBaseUrl("chat"), {
+    // Connect to the gateway origin directly (not serviceBaseUrl("chat")) --
+    // socket.io-client treats a URL's path as a namespace, not a route
+    // prefix, so the /chat prefix has to be passed via `path` instead,
+    // matching the server-side path set in message.gateway.ts.
+    const socket: Socket = io(apiOrigin(), {
+      path: "/chat/socket.io",
       auth: { token: useAuthStore.getState().token },
       transports: ["websocket"],
     });

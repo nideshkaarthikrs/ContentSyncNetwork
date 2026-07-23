@@ -8,3 +8,10 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+
+// npx expo prebuild --clean
+// cd android
+// gradlew --stop
+// gradlew clean
+// gradlew assembleRelease

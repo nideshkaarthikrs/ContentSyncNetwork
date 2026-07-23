@@ -31,7 +31,7 @@ const SERVICE_PREFIXES: Record<ServiceName, string> = {
   notification: "notification",
 };
 
-const API_HOST = process.env.EXPO_PUBLIC_API_HOST;
+const API_HOST = "https://apps.vapko-ti.com/csn"; // process.env.EXPO_PUBLIC_API_HOST;
 
 export function apiOrigin(): string {
   if (!API_HOST) {

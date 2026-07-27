@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import TunePlayButton from "../../components/common/TunePlayButton";
+import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useTune } from "../../hooks/tune/useTune";
 import { useAuthStore } from "../../store/authStore";
@@ -28,6 +29,8 @@ export default function TuneDetailScreen({
   navigation,
   route
 }: Props) {
+  useStopAudioOnBlur();
+
   const tuneId = route?.params?.tuneId;
   const { data: tune, isLoading, isError, error } = useTune(tuneId);
   const deleteTune = useDeleteTune();

@@ -17,6 +17,7 @@ import { RNFile } from "../../api/rnFile";
 import { Lyrics } from "../../api/services/lyrics.api";
 import SelectListModal from "../../components/common/SelectListModal";
 import TunePlayButton from "../../components/common/TunePlayButton";
+import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useTuneLyrics } from "../../hooks/lyrics/useTuneLyrics";
 import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useAnalyzePerformance } from "../../hooks/voice/useAnalyzePerformance";
@@ -31,6 +32,8 @@ export default function SingerStudioScreen({
   navigation,
   route
 }: Props) {
+  useStopAudioOnBlur();
+
   const {
     selectedTune,
     setSelectedTune,

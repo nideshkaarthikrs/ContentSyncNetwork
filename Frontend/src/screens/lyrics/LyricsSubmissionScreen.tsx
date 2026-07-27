@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getErrorMessage } from "../../api/getErrorMessage";
 import SelectListModal from "../../components/common/SelectListModal";
 import TunePlayButton from "../../components/common/TunePlayButton";
+import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useCreateLyrics } from "../../hooks/lyrics/useCreateLyrics";
 import { useGenerateLyrics } from "../../hooks/lyrics/useGenerateLyrics";
 
@@ -28,6 +29,8 @@ export default function LyricsSubmissionScreen({
   navigation,
   route
 }: Props) {
+  useStopAudioOnBlur();
+
   const tuneId: string | undefined = route?.params?.tuneId;
   const tuneTitle: string = route?.params?.tuneTitle || "Untitled Tune";
 

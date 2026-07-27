@@ -20,6 +20,7 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
 import SelectListModal from "../../components/common/SelectListModal";
 import TunePlayButton from "../../components/common/TunePlayButton";
+import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useCreateVideoProject } from "../../hooks/video/useCreateVideoProject";
 import { useGenerateStoryboard } from "../../hooks/video/useGenerateStoryboard";
@@ -34,6 +35,8 @@ export default function DirectorStudioScreen({
   navigation,
   route
 }: Props) {
+  useStopAudioOnBlur();
+
   const [useAIStoryboard, setUseAIStoryboard] =
     useState(true);
 

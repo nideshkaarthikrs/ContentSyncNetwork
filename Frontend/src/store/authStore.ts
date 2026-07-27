@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
 import { serviceBaseUrl } from "../config/services";
+import { useAudioPlayerStore } from "./audioPlayerStore";
 
 const TOKEN_KEY = "csn.token";
 const REFRESH_TOKEN_KEY = "csn.refreshToken";
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    useAudioPlayerStore.getState().stop();
     await Promise.all([
       SecureStore.deleteItemAsync(TOKEN_KEY),
       SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),

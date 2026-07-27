@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import TunePlayButton from "../../components/common/TunePlayButton";
+import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useMyTunes } from "../../hooks/tune/useMyTunes";
 
 interface Props {
@@ -22,6 +23,8 @@ interface Props {
 export default function ComposerDashboardScreen({
   navigation
 }: Props) {
+  useStopAudioOnBlur();
+
   const { data, isLoading } = useMyTunes(1, 5);
   const tunes = data?.tunes ?? [];
 

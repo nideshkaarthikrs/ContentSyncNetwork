@@ -13,17 +13,26 @@ interface Props {
 }
 
 export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Props) {
-  const { currentTuneId, status, play, pause, resume } = useAudioPlayerStore();
+  // Field-level selectors: this button renders inside FlatList rows (up to 50
+  // in the tune picker), so a whole-store subscription would re-render every
+  // row on each playback tick.
+  const isActive = useAudioPlayerStore((s) => s.currentTuneId === tuneId);
+  const status = useAudioPlayerStore((s) =>
+    s.currentTuneId === tuneId ? s.status : "idle"
+  );
 
   // Some screens only have a tuneId (e.g. picker rows built from navigation params
   // without a full Tune fetch) — fetch the full record ourselves in that case.
   const shouldFetchTune = !audioUrl;
-  const { data: fetchedTune } = useTune(shouldFetchTune ? tuneId : undefined);
+  const { data: fetchedTune, isLoading: isFetchingTune } = useTune(
+    shouldFetchTune ? tuneId : undefined
+  );
   const resolvedAudioUrl = audioUrl ?? fetchedTune?.audioUrl;
 
-  const isActive = currentTuneId === tuneId;
-  const isLoading = isActive && status === "loading";
+  const isResolving = shouldFetchTune && isFetchingTune;
+  const isLoading = (isActive && status === "loading") || isResolving;
   const isPlaying = isActive && status === "playing";
+  const hasError = isActive && status === "error";
 
   const dimension = size === "large" ? 64 : 36;
   const iconSize = size === "large" ? 28 : 18;
@@ -32,14 +41,15 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
     if (!resolvedAudioUrl) {
       return;
     }
-    if (!isActive) {
-      play(tuneId, resolvedAudioUrl);
+    const player = useAudioPlayerStore.getState();
+    if (!isActive || status === "error") {
+      player.play(tuneId, resolvedAudioUrl);
       return;
     }
     if (status === "playing") {
-      pause();
+      player.pause();
     } else {
-      resume();
+      player.resume();
     }
   };
 
@@ -56,7 +66,7 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
         <ActivityIndicator color="#FFF" size="small" />
       ) : (
         <Feather
-          name={isPlaying ? "pause" : "play"}
+          name={hasError ? "alert-circle" : isPlaying ? "pause" : "play"}
           size={iconSize}
           color="#FFF"
         />

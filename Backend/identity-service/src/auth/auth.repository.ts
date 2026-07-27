@@ -12,9 +12,12 @@ export class AuthRepository {
   }
 
   async findUserByIdentifier(identifier: string) {
-    const normalized = normalizeEmail(identifier);
+    // Mobile numbers are stored as-entered (only email is normalized on
+    // write), so the mobile branch must not be lowercased.
+    const email = normalizeEmail(identifier);
+    const mobile = identifier.trim();
     return this.prisma.user.findFirst({
-      where: { OR: [{ email: normalized }, { mobile: normalized }] },
+      where: { OR: [{ email }, { mobile }] },
     });
   }
 

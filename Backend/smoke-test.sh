@@ -263,9 +263,13 @@ SUBSCRIBE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/subscr
   -H "$AUTH" -H "Content-Type: application/json" -d '{"plan":"PREMIUM"}')
 check "POST /subscriptions" 201 "$SUBSCRIBE"
 
+# The webhook is guarded by the shared internal secret until a real payment
+# gateway (with HMAC signature verification) is integrated.
+INTERNAL_SECRET="${INTERNAL_SERVICE_SECRET:-your-internal-secret-change-in-production}"
 WEBHOOK=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/payments/webhook" \
-  -H "Content-Type: application/json" -d '{"eventType":"payment.success","payload":{}}')
-check "POST /payments/webhook" 200 "$WEBHOOK"
+  -H "Content-Type: application/json" -H "x-internal-secret: $INTERNAL_SECRET" \
+  -d '{"eventType":"payment.success","payload":{}}')
+check "POST /payments/webhook (with internal secret)" 200 "$WEBHOOK"
 
 DASHBOARD=$(curl -s -o "$TMP_DIR/dashboard.json" -w "%{http_code}" "$HOST/payment/revenues/dashboard" -H "$AUTH")
 check "GET /revenues/dashboard" 200 "$DASHBOARD"
@@ -275,6 +279,90 @@ check "GET /revenues/dashboard includes growthPercent/revenueBreakdown" "true" "
 WITHDRAW=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
   -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":100,"bankAccountId":"ACC123"}')
 check "POST /revenues/withdraw" 201 "$WITHDRAW"
+
+echo "== negative assertions (authorization & races) =="
+
+# The recipient has only a PENDING invite to the project — not yet a member, so
+# members/files must be forbidden.
+NEG_MEMBERS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/project/projects/$PROJECT_ID/members" -H "$RECIPIENT_AUTH")
+check "GET /projects/:projectId/members as non-member" 403 "$NEG_MEMBERS"
+
+NEG_FILES=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/project/projects/$PROJECT_ID/files" -H "$RECIPIENT_AUTH")
+check "GET /projects/:projectId/files as non-member" 403 "$NEG_FILES"
+
+NEG_WEBHOOK=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/payments/webhook" \
+  -H "Content-Type: application/json" -d '{"eventType":"payment.success","payload":{}}')
+check "POST /payments/webhook without internal secret" 401 "$NEG_WEBHOOK"
+
+NEG_INTERNAL_OWNER=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/internal/tunes/$TUNE_ID/owner")
+check "GET /internal/tunes/:tuneId/owner without internal secret" 401 "$NEG_INTERNAL_OWNER"
+
+# Listing an asset you don't own must be refused (TUNE and VIDEO both verified
+# against the owning service).
+NEG_LIST_TUNE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/marketplace/rights" \
+  -H "$RECIPIENT_AUTH" -H "Content-Type: application/json" \
+  -d "{\"assetId\":\"$TUNE_ID\",\"assetType\":\"TUNE\",\"licenseType\":\"NON_EXCLUSIVE\",\"price\":1}")
+check "POST /marketplace/rights for someone else's tune" 403 "$NEG_LIST_TUNE"
+
+NEG_LIST_VIDEO=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/marketplace/rights" \
+  -H "$RECIPIENT_AUTH" -H "Content-Type: application/json" \
+  -d "{\"assetId\":\"$VIDEO_ID\",\"assetType\":\"VIDEO\",\"licenseType\":\"NON_EXCLUSIVE\",\"price\":1}")
+check "POST /marketplace/rights for someone else's video" 403 "$NEG_LIST_VIDEO"
+
+NEG_LIST_GHOST=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/marketplace/rights" \
+  -H "$AUTH" -H "Content-Type: application/json" \
+  -d "{\"assetId\":\"TUN999999\",\"assetType\":\"TUNE\",\"licenseType\":\"NON_EXCLUSIVE\",\"price\":1}")
+check "POST /marketplace/rights for nonexistent tune" 403 "$NEG_LIST_GHOST"
+
+# Approving lyrics on a tune you don't own must be refused even with the
+# COMPOSER role. Fresh lyrics record + a fresh composer who owns no tunes.
+COMPOSER2_EMAIL="smoketest_composer2_${TS}@csn.dev"
+COMPOSER2_MOBILE="7${TS: -9}"
+curl -s -o /dev/null -X POST "$HOST/identity/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"fullName\":\"Smoke Composer2\",\"email\":\"$COMPOSER2_EMAIL\",\"mobile\":\"$COMPOSER2_MOBILE\",\"password\":\"$PASSWORD\",\"roles\":[\"COMPOSER\"]}"
+COMPOSER2_TOKEN=$(curl -s -X POST "$HOST/identity/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$COMPOSER2_EMAIL\",\"password\":\"$PASSWORD\"}" | jq -r '.token')
+
+LYRICS2=$(curl -s -X POST "$HOST/lyrics/lyrics" \
+  -H "$AUTH" -H "Content-Type: application/json" \
+  -d "{\"tuneId\":\"$TUNE_ID\",\"title\":\"Second Smoke Lyrics\",\"language\":\"English\",\"lyrics\":\"na na na\"}" | jq -r '.lyricsId')
+
+NEG_APPROVE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/lyrics/lyrics/$LYRICS2/approve" \
+  -H "Authorization: Bearer $COMPOSER2_TOKEN")
+check "POST /lyrics/:lyricsId/approve by composer who doesn't own the tune" 403 "$NEG_APPROVE"
+
+POS_APPROVE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/lyrics/lyrics/$LYRICS2/approve" -H "$AUTH")
+check "POST /lyrics/:lyricsId/approve by the tune owner" 200 "$POS_APPROVE"
+
+# Rotating the same refresh token twice must yield one 200 and one 401 — never
+# a 500 (previously a P2025 crash under concurrency).
+RECIPIENT_RELOGIN=$(curl -s -X POST "$HOST/identity/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$RECIPIENT_EMAIL\",\"password\":\"$PASSWORD\"}")
+RACE_REFRESH=$(echo "$RECIPIENT_RELOGIN" | jq -r '.refreshToken')
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/identity/auth/refresh-token" \
+  -H "Content-Type: application/json" -d "{\"refreshToken\":\"$RACE_REFRESH\"}" > "$TMP_DIR/refresh_race_1" &
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/identity/auth/refresh-token" \
+  -H "Content-Type: application/json" -d "{\"refreshToken\":\"$RACE_REFRESH\"}" > "$TMP_DIR/refresh_race_2" &
+wait
+REFRESH_RACE_CODES=$({ cat "$TMP_DIR/refresh_race_1"; echo; cat "$TMP_DIR/refresh_race_2"; echo; } | sort | paste -sd, -)
+check "POST /auth/refresh-token same token twice (one wins, one 401)" "200,401" "$REFRESH_RACE_CODES"
+
+# Withdrawal race: the owner earned 500 (marketplace sale) and withdrew 100
+# above, leaving 400. Two concurrent 400-withdrawals must not both succeed.
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
+  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":400,"bankAccountId":"ACC123"}' > "$TMP_DIR/withdraw_race_1" &
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
+  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":400,"bankAccountId":"ACC123"}' > "$TMP_DIR/withdraw_race_2" &
+wait
+WITHDRAW_RACE_CODES=$({ cat "$TMP_DIR/withdraw_race_1"; echo; cat "$TMP_DIR/withdraw_race_2"; echo; } | sort | paste -sd, -)
+check "POST /revenues/withdraw concurrent overdraw (one wins, one 400)" "201,400" "$WITHDRAW_RACE_CODES"
+
+NEG_WITHDRAW_EMPTY=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
+  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":1,"bankAccountId":"ACC123"}')
+check "POST /revenues/withdraw with exhausted balance" 400 "$NEG_WITHDRAW_EMPTY"
 
 echo "== notification-service =="
 

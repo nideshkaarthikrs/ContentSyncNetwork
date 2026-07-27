@@ -12,6 +12,12 @@ export default () => ({
   paymentService: {
     url: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3012',
   },
+  tuneService: {
+    url: process.env.TUNE_SERVICE_URL || 'http://localhost:3003',
+  },
+  videoService: {
+    url: process.env.VIDEO_SERVICE_URL || 'http://localhost:3006',
+  },
   notificationService: {
     url: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3013',
   },

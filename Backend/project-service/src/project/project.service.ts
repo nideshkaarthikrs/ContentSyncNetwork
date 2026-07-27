@@ -125,11 +125,14 @@ export class ProjectService {
     };
   }
 
-  async getMembers(projectId: string) {
+  async getMembers(projectId: string, requesterId: string, requesterUserId: string) {
     const seq = parseDisplayId(projectId);
     const project = await this.repo.findBySequenceNumber(seq);
     if (!project) {
       throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-7001', message: 'Project not found' });
+    }
+    if (!this.isMember(project, requesterId, requesterUserId)) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-7003', message: 'Only project members can view members' });
     }
     return {
       status: 'SUCCESS',
@@ -145,11 +148,14 @@ export class ProjectService {
     };
   }
 
-  async getFiles(projectId: string) {
+  async getFiles(projectId: string, requesterId: string, requesterUserId: string) {
     const seq = parseDisplayId(projectId);
     const project = await this.repo.findBySequenceNumber(seq);
     if (!project) {
       throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-7001', message: 'Project not found' });
+    }
+    if (!this.isMember(project, requesterId, requesterUserId)) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-7003', message: 'Only project members can view files' });
     }
     const files = await this.repo.findFiles(project.id);
     return {

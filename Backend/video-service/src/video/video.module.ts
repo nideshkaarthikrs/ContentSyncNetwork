@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
+import { InternalVideoController } from './internal-video.controller';
 import { AiController, VideoController, VideoProjectController } from './video.controller';
 import { VideoRepository } from './video.repository';
 import { VideoService } from './video.service';
@@ -19,7 +20,7 @@ import { VideoService } from './video.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [VideoProjectController, VideoController, AiController],
+  controllers: [VideoProjectController, VideoController, AiController, InternalVideoController],
   providers: [VideoService, VideoRepository, PrismaService, JwtStrategy],
 })
 export class VideoModule {}

@@ -43,8 +43,13 @@ export class AuthRepository {
     return this.prisma.refreshToken.findUnique({ where: { token } });
   }
 
+  /**
+   * deleteMany instead of delete: under concurrent rotation of the same token
+   * the loser must see count 0 (and get a 401 from the caller), not a thrown
+   * P2025 that surfaces as a 500.
+   */
   async deleteRefreshToken(token: string) {
-    return this.prisma.refreshToken.delete({ where: { token } });
+    return this.prisma.refreshToken.deleteMany({ where: { token } });
   }
 
   async deleteAllRefreshTokensForUser(userId: string) {

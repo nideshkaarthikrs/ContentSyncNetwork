@@ -71,6 +71,23 @@ export class VideoService {
     };
   }
 
+  async getOwner(videoId: string) {
+    const seq = parseVideoDisplayId(videoId);
+    const record = await this.repo.findVideoBySequenceNumber(seq);
+    if (!record) {
+      throw new NotFoundException({
+        status: 'ERROR',
+        errorCode: 'CSN-6001',
+        message: 'Video not found',
+      });
+    }
+    return {
+      status: 'SUCCESS',
+      message: 'Owner retrieved',
+      data: { ownerUserId: record.uploaderUserId },
+    };
+  }
+
   generateStoryboard(dto: GenerateStoryboardDto) {
     return {
       status: 'SUCCESS',

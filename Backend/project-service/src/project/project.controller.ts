@@ -66,15 +66,15 @@ export class ProjectController {
   @Get(':projectId/members')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getMembers(@Param('projectId') projectId: string) {
-    return this.projectService.getMembers(projectId);
+  getMembers(@Param('projectId') projectId: string, @Request() req) {
+    return this.projectService.getMembers(projectId, req.user.id, req.user.userId);
   }
 
   @Get(':projectId/files')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getFiles(@Param('projectId') projectId: string) {
-    return this.projectService.getFiles(projectId);
+  getFiles(@Param('projectId') projectId: string, @Request() req) {
+    return this.projectService.getFiles(projectId, req.user.id, req.user.userId);
   }
 
   @Post(':projectId/files')

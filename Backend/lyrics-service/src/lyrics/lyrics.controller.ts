@@ -43,6 +43,6 @@ export class LyricsController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   approve(@Param('lyricsId') lyricsId: string, @Request() req) {
-    return this.lyricsService.approve(lyricsId, req.user.roles);
+    return this.lyricsService.approve(lyricsId, req.user.roles, req.user.userId);
   }
 }

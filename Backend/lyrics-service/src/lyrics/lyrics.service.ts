@@ -4,6 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { getInternal } from '../shared/internal-http.client';
 import { CreateLyricsDto } from './dto/create-lyrics.dto';
 import { GenerateLyricsDto } from './dto/generate-lyrics.dto';
 import { UpdateLyricsDto } from './dto/update-lyrics.dto';
@@ -19,7 +21,10 @@ function parseDisplayId(lyricsId: string): number {
 
 @Injectable()
 export class LyricsService {
-  constructor(private readonly repo: LyricsRepository) {}
+  constructor(
+    private readonly repo: LyricsRepository,
+    private readonly config: ConfigService,
+  ) {}
 
   async submit(authorId: string, dto: CreateLyricsDto) {
     const record = await this.repo.create(authorId, dto);
@@ -56,8 +61,7 @@ export class LyricsService {
     };
   }
 
-  async approve(lyricsId: string, requesterRoles: string[]) {
-    // TODO: also verify requester owns the tune (requires cross-service call to tune-service)
+  async approve(lyricsId: string, requesterRoles: string[], requesterUserId: string) {
     if (!requesterRoles.includes('COMPOSER')) {
       throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-4002', message: 'Only composers can approve lyrics' });
     }
@@ -65,6 +69,15 @@ export class LyricsService {
     const record = await this.repo.findBySequenceNumber(seq);
     if (!record) {
       throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-4001', message: 'Lyrics not found' });
+    }
+    // Only the owner of the tune these lyrics were written for may approve
+    // them. Fails closed: an unreachable tune-service refuses the approval.
+    const owner = await getInternal<{ data: { ownerUserId: string } }>(
+      `${this.config.get<string>('tuneService.url')}/internal/tunes/${record.tuneId}/owner`,
+      this.config.get<string>('internal.secret'),
+    );
+    if (!owner || owner.data.ownerUserId !== requesterUserId) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-4004', message: 'Only the owner of the tune can approve its lyrics' });
     }
     if (record.status === 'APPROVED') {
       throw new ConflictException({ status: 'ERROR', errorCode: 'CSN-4003', message: 'Lyrics already approved' });

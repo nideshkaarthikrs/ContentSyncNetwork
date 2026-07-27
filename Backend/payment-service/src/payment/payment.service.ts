@@ -78,15 +78,10 @@ export class PaymentService {
   }
 
   async withdraw(user: { id: string; userId: string }, dto: WithdrawDto) {
-    const sums = await this.repo.sumByType(user.id);
-    const byType = Object.fromEntries(sums.map((s) => [s.type, s._sum.amount ?? 0]));
-    const earnings = (byType['MARKETPLACE_SALE'] ?? 0) + (byType['ROYALTY'] ?? 0);
-    const alreadyWithdrawn = await this.repo.sumWithdrawn(user.id);
-    const available = earnings - alreadyWithdrawn;
-    if (dto.amount > available) {
+    const req = await this.repo.createWithdrawalIfBalanceAllows(user.id, user.userId, dto.amount, dto.bankAccountId);
+    if (!req) {
       throw new BadRequestException(error('CSN-PAY-001', 'Insufficient available balance'));
     }
-    const req = await this.repo.createWithdrawal(user.id, user.userId, dto.amount, dto.bankAccountId);
     const withdrawalId = 'WDR' + (11000 + req.sequenceNumber);
     return success('Withdrawal initiated', {
       data: { withdrawalId, status: req.status },

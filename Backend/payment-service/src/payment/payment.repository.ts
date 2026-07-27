@@ -18,9 +18,33 @@ export class PaymentRepository {
     });
   }
 
-  createWithdrawal(userId: string, userDisplayId: string, amount: number, bankAccountId: string) {
-    return this.prisma.withdrawalRequest.create({
-      data: { userId, userDisplayId, amount, bankAccountId },
+  /**
+   * Creates a withdrawal only if the user's available balance (earnings minus
+   * prior non-FAILED withdrawals) covers it. The balance check and the insert
+   * run in one transaction under a per-user advisory lock so two concurrent
+   * requests can't both pass the check and overdraw. Returns null when the
+   * balance is insufficient.
+   */
+  createWithdrawalIfBalanceAllows(userId: string, userDisplayId: string, amount: number, bankAccountId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      // $executeRaw, not $queryRaw: pg_advisory_xact_lock returns void, which
+      // $queryRaw cannot deserialize.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+      const earnings = await tx.transaction.aggregate({
+        where: { userId, type: { in: [TransactionType.MARKETPLACE_SALE, TransactionType.ROYALTY] } },
+        _sum: { amount: true },
+      });
+      const withdrawn = await tx.withdrawalRequest.aggregate({
+        where: { userId, status: { not: 'FAILED' } },
+        _sum: { amount: true },
+      });
+      const available = (earnings._sum.amount ?? 0) - (withdrawn._sum.amount ?? 0);
+      if (amount > available) {
+        return null;
+      }
+      return tx.withdrawalRequest.create({
+        data: { userId, userDisplayId, amount, bankAccountId },
+      });
     });
   }
 
@@ -53,11 +77,4 @@ export class PaymentRepository {
     return result._sum.amount ?? 0;
   }
 
-  async sumWithdrawn(userId: string) {
-    const result = await this.prisma.withdrawalRequest.aggregate({
-      where: { userId, status: { not: 'FAILED' } },
-      _sum: { amount: true },
-    });
-    return result._sum.amount ?? 0;
-  }
 }

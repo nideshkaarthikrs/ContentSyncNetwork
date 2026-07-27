@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { postInternal } from '../shared/internal-http.client';
+import { getInternal, postInternal } from '../shared/internal-http.client';
 import { error } from '../shared/response.helper';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { DrmTokenDto } from './dto/drm-token.dto';
@@ -32,7 +32,32 @@ export class RightsService {
     private readonly config: ConfigService,
   ) {}
 
+  /**
+   * Verifies the caller owns the asset they're listing, via the owning
+   * service's internal owner endpoint. Fails closed: an unreachable service or
+   * unknown asset both refuse the listing. SONG has no owning service in this
+   * codebase, so it can't be verified — allowed through as before.
+   */
+  private async assertCallerOwnsAsset(userDisplayId: string, assetId: string, assetType: string) {
+    let ownerUrl: string;
+    if (assetType === 'TUNE') {
+      ownerUrl = `${this.config.get<string>('tuneService.url')}/internal/tunes/${assetId}/owner`;
+    } else if (assetType === 'VIDEO') {
+      ownerUrl = `${this.config.get<string>('videoService.url')}/internal/videos/${assetId}/owner`;
+    } else {
+      return;
+    }
+    const owner = await getInternal<{ data: { ownerUserId: string } }>(
+      ownerUrl,
+      this.config.get<string>('internal.secret'),
+    );
+    if (!owner || owner.data.ownerUserId !== userDisplayId) {
+      throw new ForbiddenException(error('CSN-RIGHTS-007', 'You can only list assets you own'));
+    }
+  }
+
   async createListing(user: { id: string; userId: string }, dto: CreateListingDto) {
+    await this.assertCallerOwnsAsset(user.userId, dto.assetId, dto.assetType);
     const listing = await this.repo.createListing(
       dto.assetId,
       dto.assetType,

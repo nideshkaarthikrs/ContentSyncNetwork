@@ -123,9 +123,25 @@ export class AuthService {
       });
     }
 
-    await this.repo.deleteRefreshToken(token);
+    const { count } = await this.repo.deleteRefreshToken(token);
+    if (count === 0) {
+      // A concurrent refresh already rotated this token.
+      throw new UnauthorizedException({
+        status: 'ERROR',
+        errorCode: 'CSN-1003',
+        message: 'Invalid or expired refresh token',
+      });
+    }
 
     const user = await this.repo.findUserById(record.userId);
+    if (!user) {
+      // Refresh token outlived its user (account deleted).
+      throw new UnauthorizedException({
+        status: 'ERROR',
+        errorCode: 'CSN-1003',
+        message: 'Invalid or expired refresh token',
+      });
+    }
     const displayId = this.toDisplayId(user.sequenceNumber);
 
     const newToken = this.jwtService.sign({
@@ -151,6 +167,14 @@ export class AuthService {
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await this.repo.findUserById(userId);
+    if (!user) {
+      // Valid JWT for a user that no longer exists.
+      throw new UnauthorizedException({
+        status: 'ERROR',
+        errorCode: 'CSN-1004',
+        message: 'Current password is incorrect',
+      });
+    }
     const passwordMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!passwordMatch) {
       throw new UnauthorizedException({

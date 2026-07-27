@@ -162,6 +162,7 @@ services:
     env_file: ./lyrics-service/.env
     environment:
       DATABASE_URL: postgresql://csn:csn_pass@lyrics-db:5432/csn_lyrics
+      TUNE_SERVICE_URL: http://tune-service:3003
     depends_on:
       lyrics-migrate: { condition: service_completed_successfully }
     expose: ["3004"]
@@ -408,6 +409,8 @@ services:
       DATABASE_URL: postgresql://csn:csn_pass@rights-db:5432/csn_rights
       PAYMENT_SERVICE_URL: http://payment-service:3012
       NOTIFICATION_SERVICE_URL: http://notification-service:3013
+      TUNE_SERVICE_URL: http://tune-service:3003
+      VIDEO_SERVICE_URL: http://video-service:3006
     depends_on:
       rights-migrate: { condition: service_completed_successfully }
     expose: ["3011"]

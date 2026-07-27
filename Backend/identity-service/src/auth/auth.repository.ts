@@ -1,18 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { normalizeEmail } from '../shared/normalize-email.util';
 
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findUserByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
   }
 
   async findUserByIdentifier(identifier: string) {
+    const normalized = normalizeEmail(identifier);
     return this.prisma.user.findFirst({
-      where: { OR: [{ email: identifier }, { mobile: identifier }] },
+      where: { OR: [{ email: normalized }, { mobile: normalized }] },
     });
   }
 
@@ -23,7 +25,9 @@ export class AuthRepository {
     passwordHash: string;
     roles: Role[];
   }) {
-    return this.prisma.user.create({ data });
+    return this.prisma.user.create({
+      data: { ...data, email: normalizeEmail(data.email) },
+    });
   }
 
   async saveRefreshToken(userId: string, token: string, expiresAt: Date) {

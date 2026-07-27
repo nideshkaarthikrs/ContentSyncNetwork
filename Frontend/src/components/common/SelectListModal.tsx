@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import {
   FlatList,
   Modal,
@@ -18,6 +19,7 @@ interface SelectListModalProps<T> {
   onSelect: (item: T) => void;
   onClose: () => void;
   emptyText?: string;
+  renderRight?: (item: T) => ReactNode;
 }
 
 export default function SelectListModal<T>({
@@ -28,7 +30,8 @@ export default function SelectListModal<T>({
   labelExtractor,
   onSelect,
   onClose,
-  emptyText = "Nothing here yet."
+  emptyText = "Nothing here yet.",
+  renderRight
 }: SelectListModalProps<T>) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -49,6 +52,7 @@ export default function SelectListModal<T>({
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.row} onPress={() => onSelect(item)}>
               <Text style={styles.rowText}>{labelExtractor(item)}</Text>
+              {renderRight?.(item)}
               <Feather name="chevron-right" size={18} color="#888" />
             </TouchableOpacity>
           )}

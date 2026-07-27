@@ -36,7 +36,7 @@ export default function LoginScreen({
   const handleLogin = async () => {
     setError(null);
     try {
-      await login.mutateAsync({ email: identifier, password });
+      await login.mutateAsync({ email: identifier.trim().toLowerCase(), password });
       navigation.replace("Main");
     } catch (err) {
       setError(getErrorMessage(err, "Invalid email or password."));
@@ -86,6 +86,7 @@ export default function LoginScreen({
           <TextInput
             placeholder="Password"
             secureTextEntry
+            autoCapitalize="none"
             style={styles.input}
             value={password}
             onChangeText={setPassword}

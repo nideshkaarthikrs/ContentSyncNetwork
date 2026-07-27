@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
 import SelectListModal from "../../components/common/SelectListModal";
+import TunePlayButton from "../../components/common/TunePlayButton";
 import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useCreateVideoProject } from "../../hooks/video/useCreateVideoProject";
 import { useGenerateStoryboard } from "../../hooks/video/useGenerateStoryboard";
@@ -154,10 +155,16 @@ export default function DirectorStudioScreen({
         >
           <Text>{selectedTune?.title ?? "Choose a tune"}</Text>
 
-          <Feather
-            name="chevron-right"
-            size={18}
-          />
+          <View style={styles.selectorRight}>
+            {selectedTune && (
+              <TunePlayButton tuneId={selectedTune.tuneId} audioUrl={selectedTune.audioUrl} size="small" />
+            )}
+
+            <Feather
+              name="chevron-right"
+              size={18}
+            />
+          </View>
         </TouchableOpacity>
 
         {/* Upload Mood Board */}
@@ -272,6 +279,9 @@ export default function DirectorStudioScreen({
         }}
         onClose={closeTuneModal}
         emptyText="You haven't uploaded any tunes yet."
+        renderRight={(item) => (
+          <TunePlayButton tuneId={item.tuneId} audioUrl={item.audioUrl} size="small" />
+        )}
       />
     </SafeAreaView>
   );
@@ -316,6 +326,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center"
+  },
+
+  selectorRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
   },
 
   uploadBox: {

@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import SelectListModal from "../../components/common/SelectListModal";
+import TunePlayButton from "../../components/common/TunePlayButton";
 import { useCreateLyrics } from "../../hooks/lyrics/useCreateLyrics";
 import { useGenerateLyrics } from "../../hooks/lyrics/useGenerateLyrics";
 
@@ -112,6 +113,8 @@ export default function LyricsSubmissionScreen({
 
         <View style={styles.readOnlyBox}>
           <Text>{tuneTitle}</Text>
+
+          {tuneId && <TunePlayButton tuneId={tuneId} size="small" />}
         </View>
 
         {/* Language */}
@@ -248,7 +251,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 10,
-    justifyContent: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 15,
     marginHorizontal: 20
   },

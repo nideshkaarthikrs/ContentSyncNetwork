@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
+import TunePlayButton from "../../components/common/TunePlayButton";
 import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useTune } from "../../hooks/tune/useTune";
 import { useAuthStore } from "../../store/authStore";
@@ -108,6 +109,10 @@ export default function TuneDetailScreen({
 
         <View style={styles.coverPlaceholder}>
           <Ionicons name="musical-notes" size={64} color="#FFF" />
+
+          <View style={styles.playButtonWrap}>
+            <TunePlayButton tuneId={tune.tuneId} audioUrl={tune.audioUrl} size="large" />
+          </View>
         </View>
 
         {/* Tune Info */}
@@ -252,6 +257,12 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     justifyContent: "center",
     alignItems: "center"
+  },
+
+  playButtonWrap: {
+    position: "absolute",
+    bottom: 16,
+    right: 16
   },
 
   content: {

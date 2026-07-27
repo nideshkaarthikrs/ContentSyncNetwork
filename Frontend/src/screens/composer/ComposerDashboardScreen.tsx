@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import TunePlayButton from "../../components/common/TunePlayButton";
 import { useMyTunes } from "../../hooks/tune/useMyTunes";
 
 interface Props {
@@ -154,6 +155,10 @@ export default function ComposerDashboardScreen({
               <Text style={styles.songMeta}>
                 {tune.genre} • {tune.mood}
               </Text>
+            </View>
+
+            <View style={{ marginRight: 10 }}>
+              <TunePlayButton tuneId={tune.tuneId} audioUrl={tune.audioUrl} size="small" />
             </View>
 
             <Text style={styles.time}>

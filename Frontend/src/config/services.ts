@@ -31,7 +31,7 @@ const SERVICE_PREFIXES: Record<ServiceName, string> = {
   notification: "notification",
 };
 
-const API_HOST = "https://apps.vapko-ti.com/csn"; // process.env.EXPO_PUBLIC_API_HOST;
+const API_HOST = process.env.EXPO_PUBLIC_API_HOST ?? "https://apps.vapko-ti.com/csn";
 
 export function apiOrigin(): string {
   if (!API_HOST) {
@@ -44,4 +44,14 @@ export function apiOrigin(): string {
 
 export function serviceBaseUrl(service: ServiceName): string {
   return `${apiOrigin()}/${SERVICE_PREFIXES[service]}`;
+}
+
+// tune-service returns audioUrl as a bare relative path (e.g. "/uploads/xyz.mp3"),
+// not an absolute URL -- resolve it against the gateway before handing it to a
+// media player.
+export function resolveTuneAudioUrl(audioUrl: string): string {
+  if (/^https?:\/\//i.test(audioUrl)) {
+    return audioUrl;
+  }
+  return `${serviceBaseUrl("tune")}${audioUrl}`;
 }

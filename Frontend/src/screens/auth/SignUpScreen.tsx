@@ -34,7 +34,7 @@ export default function SignUpScreen({
     }
     setError(null);
     navigation.navigate("RoleSelection", {
-      draft: { fullName, email, mobile, password }
+      draft: { fullName, email: email.trim().toLowerCase(), mobile, password }
     });
   };
 
@@ -113,6 +113,7 @@ export default function SignUpScreen({
           <TextInput
             placeholder="Password"
             secureTextEntry
+            autoCapitalize="none"
             style={styles.input}
             value={password}
             onChangeText={setPassword}

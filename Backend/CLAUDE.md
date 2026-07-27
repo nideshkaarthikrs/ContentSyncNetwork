@@ -152,7 +152,7 @@ Run via the root Compose stack (see "Local development (all services)" below) --
 - Path params use the display ID; service parses: strip `LYR`, parseInt, subtract 2000, query by `sequenceNumber`
 
 ### Approve endpoint auth pattern (MVP)
-lyrics-service `POST /lyrics/:lyricsId/approve` gates on `COMPOSER` role from JWT. Full cross-service ownership check (confirm caller owns the tune) is deferred — would require an HTTP call to tune-service.
+lyrics-service `POST /lyrics/:lyricsId/approve` gates on `COMPOSER` role from JWT **and** verifies the caller owns the tune via a synchronous `getInternal()` call to tune-service's `/internal/tunes/:tuneId/owner` (fail closed — an unreachable tune-service refuses the approval, 403 `CSN-4004` on mismatch).
 
 ### Local development (tune-service)
 Run via the root Compose stack (see "Local development (all services)" below) -- there is no per-service docker-compose.yml anymore. Its DB is on port 5434, reachable at http://localhost:${GATEWAY_PORT:-8080}/tune/ through the gateway.
@@ -206,8 +206,12 @@ Single `ProjectController` at `/projects`:
 - `POST /projects/:projectId/files` — upload a project file (JWT required; owner or
   accepted member only); multer `diskStorage` to `./uploads`, same convention as
   tune/voice/video/profile services. Files are served back over HTTP via
-  `ServeStaticModule` at `/uploads/*` (project-service only — the same gap in the
-  other upload-handling services is pre-existing tech debt, out of scope here)
+  `ServeStaticModule` at `/uploads/*` (project-, profile-, and tune-service have
+  this; `/uploads/*` is unauthenticated by design — filenames are the only
+  secret, so don't store anything sensitive there). All five upload services
+  mount a named `*_uploads` Docker volume at `/app/uploads` so files survive
+  container recreation, and every `FileInterceptor` enforces a size limit and
+  a MIME filter (HTML/SVG are rejected everywhere they'd be served same-origin)
 - `InternalProjectController` at `/internal/projects` — `GET /:projectId/membership?userId=&userDisplayId=`
   (service-to-service only, guarded by `InternalAuthGuard`), returns `{ isMember: boolean }`.
   The owner/accepted-member check previously inlined only in `uploadFile()` is now a
@@ -224,10 +228,9 @@ Single `MessageController` at `/projects`:
   the sender is a project member via a synchronous internal `GET` to project-service's
   `/internal/projects/:projectId/membership` (403 `CSN-CHAT-001` if not), then broadcasts
   the created message over the `MessageGateway` (see below) before returning
-- `GET /projects/:projectId/messages` — paginated message history (JWT required; still
-  no membership check on the read path — REST history fetch predates the socket work
-  and was left as-is, matching the "no cross-service FK validation" MVP scope this
-  service started with)
+- `GET /projects/:projectId/messages` — paginated message history (JWT required; the
+  read path also checks membership via the same internal call, 403 `CSN-CHAT-002`
+  for non-members)
 - `projectId` stored as a string reference (no DB-level FK to project-service — the
   membership check above is an HTTP call, not a foreign key)
 
@@ -442,7 +445,7 @@ here does block the primary action — `getInternal()` returns `null` on any fai
 which both call sites treat as "not a member" (fail closed, not open).
 
 ### Smoke test
-A local script `smoke-test.sh` (project root, **not committed**) exercises all 44 endpoints across all 12 services in workflow order (register → login → tune → lyrics → performance → video → project → chat → vote → feed → rights → payment → logout). It chains IDs between services, checks PASS/FAIL per endpoint, and exits 1 if anything fails. Run it with all 12 services up to verify the full integration:
+A committed script `smoke-test.sh` (Backend root) exercises all 13 services end-to-end in workflow order (register → login → tune → lyrics → performance → video → project → chat → vote → feed → rights → payment → notifications → logout), then runs a negative-assertion section: cross-user 403s, webhook without the internal secret, malformed display IDs (404 not 500), duplicate-mobile messaging, upload size/MIME rejections, invite re-flip, and concurrency races (refresh-token rotation, withdrawal overdraw). ~86 checks; it chains IDs between services, prints PASS/FAIL per check, and exits 1 if anything fails. Run it with the stack up to verify the full integration:
 ```bash
 ./smoke-test.sh
 ```

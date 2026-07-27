@@ -93,6 +93,8 @@ services:
     environment:
       DATABASE_URL: postgresql://csn:csn_pass@profile-db:5432/csn_profile
       NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    volumes:
+      - profile_uploads:/app/uploads
     depends_on:
       profile-migrate: { condition: service_completed_successfully }
     expose: ["3002"]
@@ -128,6 +130,8 @@ services:
     environment:
       DATABASE_URL: postgresql://csn:csn_pass@tune-db:5432/csn_tune
       FEED_SERVICE_URL: http://feed-service:3010
+    volumes:
+      - tune_uploads:/app/uploads
     depends_on:
       tune-migrate: { condition: service_completed_successfully }
     expose: ["3003"]
@@ -197,6 +201,8 @@ services:
     env_file: ./voice-service/.env
     environment:
       DATABASE_URL: postgresql://csn:csn_pass@voice-db:5432/csn_voice
+    volumes:
+      - voice_uploads:/app/uploads
     depends_on:
       voice-migrate: { condition: service_completed_successfully }
     expose: ["3005"]
@@ -232,6 +238,8 @@ services:
     environment:
       DATABASE_URL: postgresql://csn:csn_pass@video-db:5432/csn_video
       FEED_SERVICE_URL: http://feed-service:3010
+    volumes:
+      - video_uploads:/app/uploads
     depends_on:
       video-migrate: { condition: service_completed_successfully }
     expose: ["3006"]
@@ -268,6 +276,8 @@ services:
       DATABASE_URL: postgresql://csn:csn_pass@project-db:5432/csn_project
       FEED_SERVICE_URL: http://feed-service:3010
       NOTIFICATION_SERVICE_URL: http://notification-service:3013
+    volumes:
+      - project_uploads:/app/uploads
     depends_on:
       project-migrate: { condition: service_completed_successfully }
     expose: ["3007"]
@@ -525,3 +535,11 @@ volumes:
   rights_pgdata:
   payment_pgdata:
   notification_pgdata:
+  # Uploaded files must outlive container recreation -- without these volumes
+  # every `docker compose up --build` silently wiped all uploads while their
+  # DB records (and /uploads/... URLs) survived.
+  profile_uploads:
+  tune_uploads:
+  voice_uploads:
+  video_uploads:
+  project_uploads:

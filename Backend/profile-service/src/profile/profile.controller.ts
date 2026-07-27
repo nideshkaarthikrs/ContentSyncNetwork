@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -54,13 +55,25 @@ export class ProfileController {
           cb(null, unique + extname(file.originalname));
         },
       }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      // SVG excluded: ServeStaticModule serves uploads same-origin, so an SVG
+      // with a script payload would be stored XSS.
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('image/') || file.mimetype === 'image/svg+xml') {
+          return cb(new BadRequestException({ status: 'ERROR', errorCode: 'CSN-2005', message: 'Photo must be a non-SVG image' }), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   uploadPhoto(
     @Param('userId') userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Request() req,
   ) {
+    if (!file) {
+      throw new BadRequestException({ status: 'ERROR', errorCode: 'CSN-2004', message: 'Photo file is required' });
+    }
     return this.profileService.updatePhoto(userId, req.user.userId, file.filename);
   }
 }

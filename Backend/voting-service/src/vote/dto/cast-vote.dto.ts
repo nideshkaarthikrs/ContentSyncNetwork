@@ -1,7 +1,7 @@
-import { IsString } from 'class-validator';
+import { IsIn, IsString } from 'class-validator';
 
 export class CastVoteDto {
-  @IsString()
+  @IsIn(['TUNE', 'SONG', 'LYRICS', 'PERFORMANCE', 'VIDEO'])
   entityType: string;
 
   @IsString()

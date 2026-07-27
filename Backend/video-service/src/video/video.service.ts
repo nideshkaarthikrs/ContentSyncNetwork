@@ -14,7 +14,12 @@ function toVideoDisplayId(seq: number): string {
 }
 
 function parseVideoDisplayId(videoId: string): number {
-  return parseInt(videoId.replace('VID', ''), 10) - 1000;
+  const seq = parseInt(videoId.replace('VID', ''), 10) - 1000;
+  if (isNaN(seq)) {
+    // NaN would reach Prisma as an invalid filter and surface as a 500.
+    throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-6001', message: 'Video not found' });
+  }
+  return seq;
 }
 
 @Injectable()

@@ -36,6 +36,13 @@ export class PerformanceController {
           cb(null, unique + extname(file.originalname));
         },
       }),
+      limits: { fileSize: 30 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('audio/')) {
+          return cb(new BadRequestException({ status: 'ERROR', errorCode: 'CSN-VOICE-002', message: 'File must be an audio type' }), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   upload(

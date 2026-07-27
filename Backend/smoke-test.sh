@@ -364,6 +364,57 @@ NEG_WITHDRAW_EMPTY=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payme
   -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":1,"bankAccountId":"ACC123"}')
 check "POST /revenues/withdraw with exhausted balance" 400 "$NEG_WITHDRAW_EMPTY"
 
+# Malformed display IDs used to reach Prisma as NaN filters and 500.
+GARBAGE_TUNE=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/TUNGARBAGE")
+check "GET /tunes/:tuneId with malformed id" 404 "$GARBAGE_TUNE"
+
+GARBAGE_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/lyrics/LYRGARBAGE" -H "$AUTH")
+check "GET /lyrics/:lyricsId with malformed id" 404 "$GARBAGE_LYRICS"
+
+GARBAGE_PROJECT=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/project/projects/PRJGARBAGE/members" -H "$AUTH")
+check "GET /projects/:projectId/members with malformed id" 404 "$GARBAGE_PROJECT"
+
+GARBAGE_PERF=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/voice/performances/PERGARBAGE/analyze" -H "$AUTH")
+check "POST /performances/:performanceId/analyze with malformed id" 404 "$GARBAGE_PERF"
+
+GARBAGE_VIDEO=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/video/videos/VIDGARBAGE" -H "$AUTH")
+check "GET /videos/:videoId with malformed id" 404 "$GARBAGE_VIDEO"
+
+# A duplicate mobile must be reported as a mobile conflict, not an email one.
+DUP_MOBILE_MSG=$(curl -s -X POST "$HOST/identity/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"fullName\":\"Dup Mobile\",\"email\":\"dupmobile_${TS}@csn.dev\",\"mobile\":\"$MOBILE\",\"password\":\"$PASSWORD\",\"roles\":[\"COMPOSER\"]}" | jq -r '.message')
+check "POST /auth/register with duplicate mobile reports mobile" "Mobile number already registered" "$DUP_MOBILE_MSG"
+
+NEG_PHOTO=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/profile/profiles/$USER_ID/photo" -H "$AUTH")
+check "POST /profiles/:userId/photo without a file" 400 "$NEG_PHOTO"
+
+# Wrong MIME type for a tune upload (image posing as audio).
+NEG_TUNE_TYPE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/tune/tunes" \
+  -H "$AUTH" -F "title=Bad Type" -F "genre=Pop" \
+  -F "audio=@$TMP_DIR/audio.mp3;type=text/html")
+check "POST /tunes with non-audio MIME type" 400 "$NEG_TUNE_TYPE"
+
+# Oversized upload (photo limit is 5MB) -> multer LIMIT_FILE_SIZE -> 413.
+dd if=/dev/zero of="$TMP_DIR/big.jpg" bs=1048576 count=6 2>/dev/null
+NEG_PHOTO_SIZE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/profile/profiles/$USER_ID/photo" \
+  -H "$AUTH" -F "photo=@$TMP_DIR/big.jpg;type=image/jpeg")
+check "POST /profiles/:userId/photo oversized" 413 "$NEG_PHOTO_SIZE"
+
+NEG_VOTE_TYPE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/voting/votes" \
+  -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{"entityType":"BANANA","entityId":"X1"}')
+check "POST /votes with unknown entityType" 400 "$NEG_VOTE_TYPE"
+
+# Invite responses: accept once (200), then a second flip must be refused.
+RESPOND_INVITE=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$HOST/project/projects/$PROJECT_ID/invite" \
+  -H "$RECIPIENT_AUTH" -H "Content-Type: application/json" -d '{"status":"ACCEPTED"}')
+check "PATCH /projects/:projectId/invite (accept)" 200 "$RESPOND_INVITE"
+
+NEG_INVITE_FLIP=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$HOST/project/projects/$PROJECT_ID/invite" \
+  -H "$RECIPIENT_AUTH" -H "Content-Type: application/json" -d '{"status":"DECLINED"}')
+check "PATCH /projects/:projectId/invite after already resolved" 403 "$NEG_INVITE_FLIP"
+
 echo "== notification-service =="
 
 # Give the fire-and-forget internal calls (follow, invite, purchase, tune vote) a moment to land.

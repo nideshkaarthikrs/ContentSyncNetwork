@@ -11,7 +11,12 @@ function toDisplayId(seq: number): string {
 }
 
 function parseDisplayId(projectId: string): number {
-  return parseInt(projectId.replace('PRJ', ''), 10) - 5000;
+  const seq = parseInt(projectId.replace('PRJ', ''), 10) - 5000;
+  if (isNaN(seq)) {
+    // NaN would reach Prisma as an invalid filter and surface as a 500.
+    throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-7001', message: 'Project not found' });
+  }
+  return seq;
 }
 
 function toFileDisplayId(seq: number): string {
@@ -113,7 +118,9 @@ export class ProjectService {
     if (!project) {
       throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-7001', message: 'Project not found' });
     }
-    const invite = project.members.find((m) => m.userDisplayId === requesterUserId);
+    const invite = project.members.find(
+      (m) => m.userDisplayId === requesterUserId && m.inviteStatus === 'PENDING',
+    );
     if (!invite) {
       throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-7005', message: 'You do not have a pending invite for this project' });
     }

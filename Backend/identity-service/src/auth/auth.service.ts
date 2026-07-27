@@ -56,10 +56,13 @@ export class AuthService {
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const target = (err.meta?.target as string[] | undefined) ?? [];
         throw new ConflictException({
           status: 'ERROR',
           errorCode: 'CSN-1001',
-          message: 'Email already registered',
+          message: target.includes('mobile')
+            ? 'Mobile number already registered'
+            : 'Email already registered',
         });
       }
       throw err;

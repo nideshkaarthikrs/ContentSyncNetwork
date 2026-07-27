@@ -48,6 +48,16 @@ export class VideoController {
           cb(null, unique + extname(file.originalname));
         },
       }),
+      limits: { fileSize: 200 * 1024 * 1024 },
+      // image/* is accepted because the app uploads mood-board images through
+      // this endpoint; SVG excluded (same-origin stored-XSS via ServeStatic).
+      fileFilter: (_req, file, cb) => {
+        const ok = (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/')) && file.mimetype !== 'image/svg+xml';
+        if (!ok) {
+          return cb(new BadRequestException({ status: 'ERROR', errorCode: 'CSN-VIDEO-002', message: 'File must be a video or image type' }), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   upload(@UploadedFile() file: Express.Multer.File, @Request() req) {

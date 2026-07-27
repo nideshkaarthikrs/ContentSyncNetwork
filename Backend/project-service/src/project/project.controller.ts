@@ -89,6 +89,16 @@ export class ProjectController {
           cb(null, unique + extname(file.originalname));
         },
       }),
+      limits: { fileSize: 50 * 1024 * 1024 },
+      // Project files are intentionally not type-restricted, except for types
+      // that would execute same-origin when served back by ServeStaticModule.
+      fileFilter: (_req, file, cb) => {
+        const dangerous = ['text/html', 'application/xhtml+xml', 'image/svg+xml'];
+        if (dangerous.includes(file.mimetype)) {
+          return cb(new BadRequestException({ status: 'ERROR', errorCode: 'CSN-7006', message: 'This file type is not allowed' }), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   uploadFile(

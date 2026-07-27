@@ -9,8 +9,12 @@ function toDisplayId(seq: number): string {
 }
 
 function parseDisplayId(tuneId: string): number {
-  const num = parseInt(tuneId.replace('TUN', ''), 10);
-  return num - 1000;
+  const seq = parseInt(tuneId.replace('TUN', ''), 10) - 1000;
+  if (isNaN(seq)) {
+    // NaN would reach Prisma as an invalid filter and surface as a 500.
+    throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-3001', message: 'Tune not found' });
+  }
+  return seq;
 }
 
 @Injectable()

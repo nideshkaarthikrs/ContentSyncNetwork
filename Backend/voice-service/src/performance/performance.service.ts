@@ -7,7 +7,12 @@ function toDisplayId(seq: number): string {
 }
 
 function parseDisplayId(performanceId: string): number {
-  return parseInt(performanceId.replace('PER', ''), 10) - 3000;
+  const seq = parseInt(performanceId.replace('PER', ''), 10) - 3000;
+  if (isNaN(seq)) {
+    // NaN would reach Prisma as an invalid filter and surface as a 500.
+    throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-5001', message: 'Performance not found' });
+  }
+  return seq;
 }
 
 @Injectable()

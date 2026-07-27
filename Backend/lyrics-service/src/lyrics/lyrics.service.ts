@@ -16,7 +16,12 @@ function toDisplayId(seq: number): string {
 }
 
 function parseDisplayId(lyricsId: string): number {
-  return parseInt(lyricsId.replace('LYR', ''), 10) - 2000;
+  const seq = parseInt(lyricsId.replace('LYR', ''), 10) - 2000;
+  if (isNaN(seq)) {
+    // NaN would reach Prisma as an invalid filter and surface as a 500.
+    throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-4001', message: 'Lyrics not found' });
+  }
+  return seq;
 }
 
 @Injectable()

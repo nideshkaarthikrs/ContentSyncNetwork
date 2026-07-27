@@ -35,10 +35,9 @@ export default function SettingsPreferencesScreen({
     try {
       await logout.mutateAsync();
     } catch {
-      // useLogout clears the local session even if the server call fails, so the user can
-      // still proceed to Login below — no need to surface a network error here.
+      // useLogout clears the local session even if the server call fails — clearing the
+      // token swaps AppNavigator to the Login group, so no navigation is needed here.
     }
-    navigation.replace("Login");
   };
 
   const darkMode = usePreferencesStore((state) => state.darkMode);

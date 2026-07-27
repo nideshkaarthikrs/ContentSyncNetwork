@@ -29,23 +29,43 @@ export function useChatSocket(projectId: string | undefined) {
       path: "/chat/socket.io",
       auth: { token: useAuthStore.getState().token },
       transports: ["websocket"],
+      // Reconnection is scheduled manually below (exponential backoff +
+      // token refresh); the built-in reconnection would race it.
+      reconnection: false,
     });
 
     const queryKey = ["chat", "messages", projectId];
 
     socket.on("connect", () => {
+      reconnectAttempts = 0;
       socket.emit("joinProject", { projectId });
       queryClient.invalidateQueries({ queryKey });
     });
 
-    socket.on("connect_error", async () => {
-      try {
-        const token = await refreshOnce();
-        socket.auth = { token };
+    // Exponential backoff on connect errors. The old handler refreshed the
+    // session and reconnected immediately on every failure, which with a dead
+    // backend became a tight loop that also hammered /auth/refresh-token.
+    let reconnectAttempts = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    socket.on("connect_error", (err) => {
+      const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
+      reconnectAttempts += 1;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(async () => {
+        // Only refresh when the handshake was rejected (likely an expired
+        // token) — transport-level failures just retry with the same token.
+        if (/jwt|token|auth/i.test(err?.message ?? "")) {
+          try {
+            const token = await refreshOnce();
+            socket.auth = { token };
+          } catch {
+            // No valid session to refresh — leave the socket disconnected.
+            return;
+          }
+        }
         socket.connect();
-      } catch {
-        // No valid session to refresh — leave the socket disconnected.
-      }
+      }, delay);
     });
 
     socket.on("newMessage", (message: ChatMessage) => {
@@ -66,6 +86,7 @@ export function useChatSocket(projectId: string | undefined) {
 
     return () => {
       unsubscribeToken();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       socket.disconnect();
     };
   }, [projectId, queryClient]);

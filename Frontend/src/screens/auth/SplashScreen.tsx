@@ -8,39 +8,19 @@ import {
   View
 } from "react-native";
 
-import { useAuthStore } from "../../store/authStore";
-
-interface Props {
-  navigation: any;
-}
-
-const MIN_SPLASH_MS = 2500;
-
-export default function SplashScreen({ navigation }: Props) {
-  const scaleAnim = new Animated.Value(0.6);
-  const token = useAuthStore(state => state.token);
-  const isHydrated = useAuthStore(state => state.isHydrated);
-  const mountedAt = useRef(Date.now());
+// Purely presentational: AppNavigator renders this while the session hydrates
+// and decides itself which navigator group to mount afterwards.
+export default function SplashScreen() {
+  // useRef, not a plain new Animated.Value: a re-render would otherwise bind
+  // the style to a fresh 0.6-scale value while the spring drives the old one.
+  const scaleAnim = useRef(new Animated.Value(0.6)).current;
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true
     }).start();
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    const elapsed = Date.now() - mountedAt.current;
-    const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
-
-    const timer = setTimeout(() => {
-      navigation.replace(token ? "Main" : "Login");
-    }, remaining);
-
-    return () => clearTimeout(timer);
-  }, [isHydrated, token]);
+  }, [scaleAnim]);
 
   return (
     <View style={styles.container}>

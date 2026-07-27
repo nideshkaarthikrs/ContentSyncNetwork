@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { queryClient } from "./src/api/queryClient";
+import Toast from "./src/components/common/Toast";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useAuthStore } from "./src/store/authStore";
 import { usePreferencesStore } from "./src/store/preferencesStore";
@@ -27,6 +28,7 @@ export default function App() {
         <NavigationContainer theme={darkMode ? DarkTheme : DefaultTheme}>
           <StatusBar style={darkMode ? "light" : "dark"} />
           <AppNavigator />
+          <Toast />
         </NavigationContainer>
       </QueryClientProvider>
     </SafeAreaProvider>

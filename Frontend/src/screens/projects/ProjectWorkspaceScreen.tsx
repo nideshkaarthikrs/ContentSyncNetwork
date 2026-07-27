@@ -428,8 +428,12 @@ function FilesTab({ projectId }: { projectId: string }) {
     }
   };
 
-  const openFile = (file: ProjectFile) => {
-    Linking.openURL(`${serviceBaseUrl("project")}${file.fileUrl}`);
+  const openFile = async (file: ProjectFile) => {
+    try {
+      await Linking.openURL(`${serviceBaseUrl("project")}${file.fileUrl}`);
+    } catch {
+      Alert.alert("Couldn't open file", "No app on this device can open this file type.");
+    }
   };
 
   return (

@@ -1,5 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
 
+import { useAuthStore } from '../store/authStore';
 import BottomTabs from './BottomTabs';
 
 // Auth
@@ -73,37 +75,56 @@ import AnalyticsDashboardScreen from '../screens/analytics/AnalyticsDashboardScr
 
 const Stack = createNativeStackNavigator();
 
-export default function AppNavigator() {
-  console.log('*** CSN AppNavigator Loaded ***');
+const MIN_SPLASH_MS = 2500;
 
+export default function AppNavigator() {
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const [splashElapsed, setSplashElapsed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashElapsed(true), MIN_SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Splash is a plain component, not a route: while the session hydrates there
+  // is nothing to navigate to yet.
+  if (!isHydrated || !splashElapsed) {
+    return <SplashScreen />;
+  }
+
+  // The token is the single auth gate. Logging in (or a failed refresh calling
+  // logout()) swaps the mounted group — no screen navigates to "Login"/"Main"
+  // across the auth boundary, and logged-out users can't reach app screens via
+  // hardware back.
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
       }}
     >
-      {/* Authentication */}
-      <Stack.Screen
-        name="Splash"
-        component={SplashScreen}
-      />
+      {!token && (
+        <>
+          {/* Authentication */}
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+          />
 
-      <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-      />
+          <Stack.Screen
+            name="SignUp"
+            component={SignUpScreen}
+          />
 
-      <Stack.Screen
-        name="SignUp"
-        component={SignUpScreen}
-      />
+          <Stack.Screen
+            name="RoleSelection"
+            component={RoleSelectionScreen}
+          />
+        </>
+      )}
 
-      <Stack.Screen
-        name="RoleSelection"
-        component={RoleSelectionScreen}
-      />
-
+      {token && (
+        <>
       {/* Main App */}
       <Stack.Screen
         name="Main"
@@ -262,6 +283,8 @@ export default function AppNavigator() {
         name="AnalyticsDashboard"
         component={AnalyticsDashboardScreen}
       />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

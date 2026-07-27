@@ -25,7 +25,7 @@ export default function ComposerDashboardScreen({
 }: Props) {
   useStopAudioOnBlur();
 
-  const { data, isLoading } = useMyTunes(1, 5);
+  const { data, isLoading, isError, refetch } = useMyTunes(1, 5);
   const tunes = data?.tunes ?? [];
 
   return (
@@ -132,7 +132,18 @@ export default function ComposerDashboardScreen({
           <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
         )}
 
-        {!isLoading && tunes.length === 0 && (
+        {isError && !isLoading && (
+          <View style={{ alignItems: "center", marginTop: 20 }}>
+            <Text style={styles.emptyText}>
+              Couldn't load your tunes. Check your connection.
+            </Text>
+            <TouchableOpacity onPress={() => refetch()} style={{ marginTop: 8 }}>
+              <Text style={styles.seeAll}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!isLoading && !isError && tunes.length === 0 && (
           <Text style={styles.emptyText}>
             No tunes yet. Upload your first one above.
           </Text>

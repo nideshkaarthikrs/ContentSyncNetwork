@@ -2,6 +2,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 import { ServiceName, serviceBaseUrl } from "../config/services";
 import { useAuthStore } from "../store/authStore";
+import { queryClient } from "./queryClient";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -55,7 +56,10 @@ function createServiceClient(service: ServiceName): AxiosInstance {
         originalRequest.headers.set("Authorization", `Bearer ${newToken}`);
         return instance(originalRequest);
       } catch (refreshError) {
+        // Clearing the token swaps AppNavigator to the Login group; dropping
+        // the query cache keeps the dead session's data out of the next one.
         await useAuthStore.getState().logout();
+        queryClient.clear();
         return Promise.reject(refreshError);
       }
     },

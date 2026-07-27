@@ -31,7 +31,12 @@ const SERVICE_PREFIXES: Record<ServiceName, string> = {
   notification: "notification",
 };
 
-const API_HOST = process.env.EXPO_PUBLIC_API_HOST ?? "https://apps.vapko-ti.com/csn";
+const PROD_HOST = "https://apps.vapko-ti.com/csn";
+
+// Release builds default to production; dev builds must set the env var — a
+// dev build silently talking to production (the old behavior when .env was
+// missing) is exactly the kind of surprise this throw exists to prevent.
+const API_HOST = process.env.EXPO_PUBLIC_API_HOST ?? (__DEV__ ? "" : PROD_HOST);
 
 export function apiOrigin(): string {
   if (!API_HOST) {

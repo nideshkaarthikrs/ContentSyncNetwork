@@ -24,31 +24,19 @@ interface Props {
 
 const ENTITY_TYPE = "PERFORMANCE";
 
-// No backend endpoint lists voting candidates — voting-service only tracks votes per arbitrary entityId.
-// These entityIds are stand-ins for real performance IDs; casting and results are wired to live endpoints.
-const submissions = [
-  {
-    id: "PER3001",
-    name: "Priya Singer",
-    role: "Singer",
-    image:
-      "https://randomuser.me/api/portraits/women/44.jpg"
-  },
-  {
-    id: "PER3002",
-    name: "Arun Vocalist",
-    role: "Singer",
-    image:
-      "https://randomuser.me/api/portraits/men/32.jpg"
-  },
-  {
-    id: "PER3003",
-    name: "Meera Voice",
-    role: "Singer",
-    image:
-      "https://randomuser.me/api/portraits/women/65.jpg"
-  }
-];
+// No backend endpoint lists voting candidates yet — voting-service only tracks
+// votes per entityId. Until a candidates listing exists, the screen shows an
+// honest empty state instead of hardcoded fake performers (which used to POST
+// real votes against nonexistent entities). The cast/results plumbing below is
+// live and ready for when candidates arrive.
+interface VotingCandidate {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+}
+
+const submissions: VotingCandidate[] = [];
 
 export default function VotingScreen({
   navigation
@@ -117,6 +105,12 @@ export default function VotingScreen({
 
         {/* Participants */}
 
+        {submissions.length === 0 && (
+          <Text style={styles.emptyText}>
+            No voting candidates yet. Check back when a contest is running.
+          </Text>
+        )}
+
         {submissions.map(item => {
           const selected =
             selectedId === item.id;
@@ -177,15 +171,17 @@ export default function VotingScreen({
           );
         })}
 
-        <TouchableOpacity
-          style={styles.voteButton}
-          onPress={submitVote}
-          disabled={castVote.isPending}
-        >
-          <Text style={styles.voteText}>
-            {castVote.isPending ? "Submitting..." : "Submit Vote"}
-          </Text>
-        </TouchableOpacity>
+        {submissions.length > 0 && (
+          <TouchableOpacity
+            style={styles.voteButton}
+            onPress={submitVote}
+            disabled={castVote.isPending}
+          >
+            <Text style={styles.voteText}>
+              {castVote.isPending ? "Submitting..." : "Submit Vote"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -290,5 +286,12 @@ const styles = StyleSheet.create({
   voteText: {
     color: "#FFF",
     fontWeight: "700"
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: "#888",
+    marginTop: 30,
+    marginHorizontal: 20
   }
 });

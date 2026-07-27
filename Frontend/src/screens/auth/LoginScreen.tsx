@@ -37,7 +37,8 @@ export default function LoginScreen({
     setError(null);
     try {
       await login.mutateAsync({ email: identifier.trim().toLowerCase(), password });
-      navigation.replace("Main");
+      // No navigation here: setting the session token swaps AppNavigator's
+      // auth-gated groups automatically.
     } catch (err) {
       setError(getErrorMessage(err, "Invalid email or password."));
     }

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import configuration from './config/configuration';
+import { UPLOADS_ROOT } from './shared/uploads-path';
 import { TuneModule } from './tune/tune.module';
 
 @Module({
@@ -12,7 +12,7 @@ import { TuneModule } from './tune/tune.module';
       load: [configuration],
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: UPLOADS_ROOT,
       serveRoot: '/uploads',
     }),
     TuneModule,

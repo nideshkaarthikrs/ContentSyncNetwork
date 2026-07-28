@@ -1,6 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { postInternal } from '../shared/internal-http.client';
+import { UPLOADS_ROOT } from '../shared/uploads-path';
 import { CreateTuneDto } from './dto/create-tune.dto';
 import { TuneRepository } from './tune.repository';
 
@@ -19,6 +22,8 @@ function parseDisplayId(tuneId: string): number {
 
 @Injectable()
 export class TuneService {
+  private readonly logger = new Logger(TuneService.name);
+
   constructor(
     private readonly repo: TuneRepository,
     private readonly config: ConfigService,
@@ -68,6 +73,14 @@ export class TuneService {
       throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-3002', message: 'You are not the owner of this tune' });
     }
     await this.repo.delete(tune.id);
+
+    const filename = tune.audioUrl.replace(/^\/uploads\//, '');
+    await unlink(join(UPLOADS_ROOT, filename)).catch((err) => {
+      if (err?.code !== 'ENOENT') {
+        this.logger.warn(`Failed to delete audio file for ${tuneId}: ${err.message}`);
+      }
+    });
+
     return { status: 'SUCCESS', message: 'Tune deleted' };
   }
 

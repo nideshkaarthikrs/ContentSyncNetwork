@@ -3,6 +3,7 @@ import {
 } from "@expo/vector-icons";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -12,8 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
 import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
+import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useMyTunes } from "../../hooks/tune/useMyTunes";
 
 interface Props {
@@ -27,6 +30,24 @@ export default function ComposerDashboardScreen({
 
   const { data, isLoading, isError, refetch } = useMyTunes(1, 5);
   const tunes = data?.tunes ?? [];
+  const deleteTune = useDeleteTune();
+
+  const handleDelete = (tuneId: string) => {
+    Alert.alert("Delete Tune", "This can't be undone. Delete this tune?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteTune.mutateAsync(tuneId);
+          } catch (err) {
+            Alert.alert("Error", getErrorMessage(err, "Failed to delete tune."));
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -171,8 +192,16 @@ export default function ComposerDashboardScreen({
               </Text>
             </View>
 
-            <View style={{ marginRight: 10 }}>
+            <View style={styles.rowActions}>
               <TunePlayButton tuneId={tune.tuneId} audioUrl={tune.audioUrl} size="small" />
+
+              <TouchableOpacity
+                onPress={() => handleDelete(tune.tuneId)}
+                disabled={deleteTune.isPending}
+                style={styles.deleteIconBtn}
+              >
+                <Feather name="trash-2" size={18} color="#DC2626" />
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.time}>
@@ -302,6 +331,17 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 20,
     paddingHorizontal: 20
+  },
+
+  rowActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 10
+  },
+
+  deleteIconBtn: {
+    marginLeft: 8,
+    padding: 4
   },
 
   songName: {

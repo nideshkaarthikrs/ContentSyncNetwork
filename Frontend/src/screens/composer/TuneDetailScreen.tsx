@@ -94,20 +94,6 @@ export default function TuneDetailScreen({
               color="#111"
             />
           </TouchableOpacity>
-
-          {isOwner && (
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={handleDelete}
-              disabled={deleteTune.isPending}
-            >
-              <Feather
-                name="trash-2"
-                size={20}
-                color="#DC2626"
-              />
-            </TouchableOpacity>
-          )}
         </View>
 
         <View style={styles.coverPlaceholder}>
@@ -115,6 +101,20 @@ export default function TuneDetailScreen({
 
           <View style={styles.playButtonWrap}>
             <TunePlayButton tuneId={tune.tuneId} audioUrl={tune.audioUrl} size="large" />
+
+            {isOwner && (
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={handleDelete}
+                disabled={deleteTune.isPending}
+              >
+                <Feather
+                  name="trash-2"
+                  size={20}
+                  color="#DC2626"
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -233,8 +233,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between"
+    flexDirection: "row"
   },
 
   backBtn: {
@@ -252,7 +251,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#FFF",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    marginLeft: 10
   },
 
   coverPlaceholder: {
@@ -265,7 +265,9 @@ const styles = StyleSheet.create({
   playButtonWrap: {
     position: "absolute",
     bottom: 16,
-    right: 16
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center"
   },
 
   content: {

@@ -33,12 +33,13 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
   const isLoading = (isActive && status === "loading") || isResolving;
   const isPlaying = isActive && status === "playing";
   const hasError = isActive && status === "error";
+  const isUnavailable = isActive && status === "unavailable";
 
   const dimension = size === "large" ? 64 : 36;
   const iconSize = size === "large" ? 28 : 18;
 
   const handlePress = () => {
-    if (!resolvedAudioUrl) {
+    if (!resolvedAudioUrl || isUnavailable) {
       return;
     }
     const player = useAudioPlayerStore.getState();
@@ -56,7 +57,7 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
   return (
     <TouchableOpacity
       onPress={handlePress}
-      disabled={!resolvedAudioUrl || isLoading}
+      disabled={!resolvedAudioUrl || isLoading || isUnavailable}
       style={[
         styles.button,
         { width: dimension, height: dimension, borderRadius: dimension / 2 },
@@ -66,7 +67,7 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
         <ActivityIndicator color="#FFF" size="small" />
       ) : (
         <Feather
-          name={hasError ? "alert-circle" : isPlaying ? "pause" : "play"}
+          name={isUnavailable ? "slash" : hasError ? "alert-circle" : isPlaying ? "pause" : "play"}
           size={iconSize}
           color="#FFF"
         />

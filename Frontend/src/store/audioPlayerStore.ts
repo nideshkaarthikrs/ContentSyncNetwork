@@ -5,7 +5,7 @@ import { create } from "zustand";
 
 import { resolveTuneAudioUrl } from "../config/services";
 
-type PlaybackStatus = "idle" | "loading" | "playing" | "paused" | "error";
+type PlaybackStatus = "idle" | "loading" | "playing" | "paused" | "error" | "unavailable";
 
 interface AudioPlayerState {
   currentTuneId: string | null;
@@ -35,6 +35,19 @@ async function configureAudioModeOnce() {
 
 function unloadQuietly(sound: Audio.Sound | null) {
   sound?.unloadAsync().catch(() => {});
+}
+
+// A playback failure could be a transient network issue (retryable) or the
+// file genuinely no longer existing server-side (retrying is pointless).
+// expo-av doesn't surface the underlying HTTP status, so probe it directly;
+// inconclusive results (timeout, non-404 error) are treated as retryable.
+async function classifyPlaybackFailure(url: string): Promise<"error" | "unavailable"> {
+  try {
+    const response = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    return response.status === 404 ? "unavailable" : "error";
+  } catch {
+    return "error";
+  }
 }
 
 export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
@@ -71,9 +84,11 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
       }
     };
 
+    const resolvedUrl = resolveTuneAudioUrl(audioUrl);
+
     try {
       const { sound } = await Audio.Sound.createAsync(
-        { uri: resolveTuneAudioUrl(audioUrl) },
+        { uri: resolvedUrl },
         { shouldPlay: true },
         onPlaybackStatusUpdate
       );
@@ -89,9 +104,13 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
     } catch (err) {
       console.warn("[audioPlayerStore] failed to load tune audio", err);
       if (get().currentTuneId === tuneId) {
-        // Keep currentTuneId so the button that started this can show the
-        // error and offer a retry.
-        set({ sound: null, status: "error" });
+        // Distinguish "file is permanently gone" (404 -> non-retryable) from
+        // any other failure (network blip, etc. -> retryable "error"), so
+        // the button doesn't loop retrying a request that can never succeed.
+        const finalStatus = await classifyPlaybackFailure(resolvedUrl);
+        if (get().currentTuneId === tuneId) {
+          set({ sound: null, status: finalStatus });
+        }
       }
     }
   },

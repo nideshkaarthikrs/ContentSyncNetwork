@@ -5,7 +5,8 @@
   "scripts": {
     "build": "nest build",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "orphan-check": "ts-node scripts/mark-orphaned-tunes.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

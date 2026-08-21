@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -18,6 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { clampPagination } from '../shared/pagination.helper';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { InviteCollaboratorDto } from './dto/invite-collaborator.dto';
 import { RespondInviteDto } from './dto/respond-invite.dto';
@@ -37,8 +40,13 @@ export class ProjectController {
   @Get('my')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getMyProjects(@Request() req, @Query('page') page = '1', @Query('limit') limit = '10') {
-    return this.projectService.getMyProjects(req.user.id, req.user.userId, parseInt(page, 10), parseInt(limit, 10));
+  getMyProjects(
+    @Request() req,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    const clamped = clampPagination(page, limit);
+    return this.projectService.getMyProjects(req.user.id, req.user.userId, clamped.page, clamped.pageSize);
   }
 
   @Post(':projectId/invite')

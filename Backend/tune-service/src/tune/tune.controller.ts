@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Request,
@@ -18,6 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { clampPagination } from '../shared/pagination.helper';
 import { CreateTuneDto } from './dto/create-tune.dto';
 import { TuneService } from './tune.service';
 
@@ -62,10 +65,11 @@ export class TuneController {
   @HttpCode(HttpStatus.OK)
   getMyTunes(
     @Request() req,
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    return this.tuneService.getMyTunes(req.user.userId, parseInt(page, 10), parseInt(limit, 10));
+    const clamped = clampPagination(page, limit);
+    return this.tuneService.getMyTunes(req.user.userId, clamped.page, clamped.pageSize);
   }
 
   @Get(':tuneId')

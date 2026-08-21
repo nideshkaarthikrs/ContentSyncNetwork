@@ -1,5 +1,6 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, DefaultValuePipe, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { clampPagination } from '../shared/pagination.helper';
 import { LyricsService } from './lyrics.service';
 
 @Controller('tunes')
@@ -11,9 +12,10 @@ export class TuneLyricsController {
   @HttpCode(HttpStatus.OK)
   listForTune(
     @Param('tuneId') tuneId: string,
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '20',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ) {
-    return this.lyricsService.listForTune(tuneId, parseInt(page, 10), parseInt(pageSize, 10));
+    const clamped = clampPagination(page, pageSize);
+    return this.lyricsService.listForTune(tuneId, clamped.page, clamped.pageSize);
   }
 }

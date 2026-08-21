@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Request,
@@ -17,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { clampPagination } from '../shared/pagination.helper';
 import { CreatePerformanceDto } from './dto/create-performance.dto';
 import { PerformanceService } from './performance.service';
 
@@ -61,13 +64,14 @@ export class PerformanceController {
   @HttpCode(HttpStatus.OK)
   getMyPerformances(
     @Request() req,
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '10',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
   ) {
+    const clamped = clampPagination(page, pageSize);
     return this.performanceService.getMyPerformances(
       req.user.userId,
-      parseInt(page, 10),
-      parseInt(pageSize, 10),
+      clamped.page,
+      clamped.pageSize,
     );
   }
 

@@ -4,11 +4,14 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -38,6 +41,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
           }
         }
       }
+    } else {
+      // Not a Nest HttpException -- an unhandled error that collapses to a
+      // generic 500 above. Log it so it doesn't vanish silently.
+      const err = exception instanceof Error ? exception : new Error(String(exception));
+      this.logger.error(err.message, err.stack);
     }
 
     response.status(status).json({ status: 'ERROR', errorCode, message });

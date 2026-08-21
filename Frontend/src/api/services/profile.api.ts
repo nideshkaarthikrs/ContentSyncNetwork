@@ -5,6 +5,7 @@ import { appendRNFile, RNFile } from "../rnFile";
 export interface Profile {
   userId: string;
   name: string;
+  bio: string;
   roles: string[];
   primaryRole: string | null;
   followers: number;

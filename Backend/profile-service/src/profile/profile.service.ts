@@ -46,6 +46,7 @@ export class ProfileService {
     return {
       userId: profile.userId,
       name: profile.name,
+      bio: profile.bio,
       roles: profile.roles,
       primaryRole: profile.primaryRole,
       followers,
@@ -71,6 +72,7 @@ export class ProfileService {
     return {
       userId: profile.userId,
       name: profile.name,
+      bio: profile.bio,
       roles: profile.roles,
       primaryRole: profile.primaryRole,
       followers,

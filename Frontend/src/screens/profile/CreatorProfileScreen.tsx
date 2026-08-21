@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import Feather from "react-native-vector-icons/Feather";
 import { launchImageLibrary } from "react-native-image-picker";
 import {
@@ -28,8 +29,13 @@ export default function CreatorProfileScreen({
   navigation
 }: Props) {
   const userId = useAuthStore((state) => state.user?.userId);
-  const { data: profile, isLoading } = useProfile(userId);
+  const { data: profile, isLoading, error } = useProfile(userId);
   const uploadPhoto = useUploadPhoto(userId);
+
+  const isPrivateProfile =
+    isAxiosError(error) &&
+    error.response?.status === 403 &&
+    (error.response?.data as { errorCode?: string } | undefined)?.errorCode === "CSN-PROFILE-PRIVATE";
 
   const avatarUri = profile?.avatarUrl
     ? `${serviceBaseUrl("profile")}${profile.avatarUrl}`
@@ -81,28 +87,35 @@ export default function CreatorProfileScreen({
 
         {/* Profile */}
 
-        <View style={styles.profileSection}>
-          <TouchableOpacity onPress={handleChangePhoto} disabled={uploadPhoto.isPending}>
-            <Image
-              source={{
-                uri: avatarUri
-              }}
-              style={styles.profileImage}
-            />
+        {isLoading ? (
+          <ActivityIndicator style={{ marginTop: 30 }} color={PRIMARY} />
+        ) : isPrivateProfile ? (
+          <View style={styles.privateState}>
+            <Feather name="lock" size={32} color="#999" />
+            <Text style={styles.privateText}>
+              This profile is private
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.profileSection}>
+              <TouchableOpacity onPress={handleChangePhoto} disabled={uploadPhoto.isPending}>
+                <Image
+                  source={{
+                    uri: avatarUri
+                  }}
+                  style={styles.profileImage}
+                />
 
-            <View style={styles.editBadge}>
-              {uploadPhoto.isPending ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <Feather name="camera" size={14} color="#FFF" />
-              )}
-            </View>
-          </TouchableOpacity>
+                <View style={styles.editBadge}>
+                  {uploadPhoto.isPending ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Feather name="camera" size={14} color="#FFF" />
+                  )}
+                </View>
+              </TouchableOpacity>
 
-          {isLoading ? (
-            <ActivityIndicator style={{ marginTop: 15 }} color={PRIMARY} />
-          ) : (
-            <>
               <Text style={styles.name}>
                 {profile?.name || "Your Name"}
               </Text>
@@ -130,44 +143,19 @@ export default function CreatorProfileScreen({
                   </Text>
                 </View>
               </View>
-            </>
-          )}
-        </View>
-
-        {/* About */}
-
-        <Text style={styles.sectionTitle}>
-          About
-        </Text>
-
-        <Text style={styles.aboutText}>
-          Passionate composer creating
-          cinematic melodies, independent
-          music projects, and collaborative
-          productions across multiple genres.
-        </Text>
-
-        {/* Skills */}
-
-        <Text style={styles.sectionTitle}>
-          Skills
-        </Text>
-
-        <View style={styles.skillsRow}>
-          {[
-            "Composition",
-            "Piano",
-            "Orchestration",
-            "Mixing"
-          ].map(skill => (
-            <View
-              key={skill}
-              style={styles.skillChip}
-            >
-              <Text>{skill}</Text>
             </View>
-          ))}
-        </View>
+
+            {/* Bio */}
+
+            <Text style={styles.sectionTitle}>
+              About
+            </Text>
+
+            <Text style={styles.aboutText}>
+              {profile?.bio || "No bio yet"}
+            </Text>
+          </>
+        )}
 
         <View style={{ height: 50 }} />
       </ScrollView>
@@ -265,18 +253,16 @@ const styles = StyleSheet.create({
     color: "#555"
   },
 
-  skillsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 20
+  privateState: {
+    alignItems: "center",
+    marginTop: 40,
+    paddingHorizontal: 40
   },
 
-  skillChip: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8
+  privateText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center"
   }
 });

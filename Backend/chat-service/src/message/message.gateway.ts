@@ -25,20 +25,31 @@ type MembershipCache = Record<string, number>;
 // broadcast re-checks it. Re-verifying on every single broadcast would mean
 // one synchronous internal HTTP call to project-service per room member per
 // message -- instead membership is cached per socket per room (set on
-// joinProject, refreshed whenever a re-check succeeds) and only re-checked
+// joinProject, and refreshed on *every* broadcast delivery to that socket,
+// whether the cache was fresh or a re-check succeeded) and only re-checked
 // once it goes stale.
 //
 // Leak bound: a member removed from a project keeps receiving broadcasts
-// trusted from the cache until this TTL elapses. The next broadcast after
-// that finds the cache stale, re-verifies *before* delivering, and evicts
-// them (`socket.leave` + `membershipRevoked`) on failure -- so the message
-// that triggers detection is never itself leaked. In the common case of one
-// re-check catching a revocation, that bounds the leak to at most one
-// message delivered after the actual revocation and before the next stale
-// check; a project with many messages inside the same 60s window could see
-// more than one, since staleness is only evaluated when a broadcast occurs,
-// not on a background timer. Accepted MVP tradeoff -- there's no push-based
-// revocation channel to project-service subscribers.
+// trusted from the cache until a broadcast to that socket finds the cache
+// stale -- and because a fresh delivery now bumps verifiedAt too (not just a
+// successful re-check), staleness is measured from the *last broadcast
+// delivered to that socket*, not from the last real verification. The next
+// broadcast that lands >= TTL after the prior one to that socket finds the
+// cache stale, re-verifies *before* delivering, and evicts on failure
+// (`socket.leave` + `membershipRevoked`) -- so the message that triggers
+// detection is never itself leaked, and if broadcasts to that socket are
+// already >= TTL apart, a revoked member leaks at most one further message.
+// NOTE this does not bound the *total* leak count when broadcasts to that
+// socket keep landing < TTL apart (an active room): each such delivery
+// re-bumps verifiedAt, so the cache never goes stale and the member keeps
+// leaking every message until a >= TTL gap finally occurs in that socket's
+// traffic. This is a real trade-off versus the previous scheme (where
+// verifiedAt only moved on a successful re-check, so the re-check fired on a
+// fixed ~TTL cadence from the last verification regardless of traffic): busy
+// rooms now self-heal only once traffic goes quiet for a full TTL, whereas
+// before they self-healed on a fixed timer. Accepted MVP tradeoff -- there's
+// no push-based revocation channel to project-service subscribers, and
+// per-message re-verification was explicitly ruled out as too expensive.
 const MEMBERSHIP_TTL_MS = 60_000;
 
 @WebSocketGateway({ cors: { origin: true }, path: '/chat/socket.io' })
@@ -128,6 +139,7 @@ export class MessageGateway implements OnGatewayInit {
         const isFresh = verifiedAt !== undefined && now - verifiedAt <= MEMBERSHIP_TTL_MS;
 
         if (isFresh) {
+          memberships[projectId] = now;
           socket.emit('newMessage', message);
           return;
         }

@@ -68,6 +68,7 @@ enum TransactionType {
   SUBSCRIPTION
   MARKETPLACE_SALE
   ROYALTY
+  MARKETPLACE_PURCHASE
 }
 
 model Transaction {

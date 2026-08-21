@@ -101,7 +101,7 @@ CREATE_TUNE=$(curl -s -o "$TMP_DIR/tune.json" -w "%{http_code}" -X POST "$HOST/t
   -F "title=Smoke Tune" -F "genre=Pop" -F "language=English" -F "mood=Happy" -F "bpm=120" \
   -F "audio=@$TMP_DIR/audio.mp3;type=audio/mpeg")
 check "POST /tunes" 201 "$CREATE_TUNE"
-TUNE_ID=$(jq -r '.tuneId' "$TMP_DIR/tune.json")
+TUNE_ID=$(jq -r '.data.tuneId' "$TMP_DIR/tune.json")
 
 MY_TUNES=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/my" -H "$AUTH")
 check "GET /tunes/my" 200 "$MY_TUNES"
@@ -118,7 +118,7 @@ CREATE_LYRICS=$(curl -s -o "$TMP_DIR/lyrics.json" -w "%{http_code}" -X POST "$HO
   -H "$AUTH" -H "Content-Type: application/json" \
   -d "{\"tuneId\":\"$TUNE_ID\",\"title\":\"Smoke Lyrics\",\"language\":\"English\",\"lyrics\":\"la la la\"}")
 check "POST /lyrics" 201 "$CREATE_LYRICS"
-LYRICS_ID=$(jq -r '.lyricsId' "$TMP_DIR/lyrics.json")
+LYRICS_ID=$(jq -r '.data.lyricsId' "$TMP_DIR/lyrics.json")
 
 LIST_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/tunes/$TUNE_ID/lyrics")
 check "GET /tunes/:tuneId/lyrics" 200 "$LIST_LYRICS"
@@ -136,7 +136,7 @@ echo "== voice-service =="
 PERF=$(curl -s -o "$TMP_DIR/perf.json" -w "%{http_code}" -X POST "$HOST/voice/performances" \
   -H "$AUTH" -F "tuneId=$TUNE_ID" -F "lyricsId=$LYRICS_ID" -F "file=@$TMP_DIR/audio.mp3;type=audio/mpeg")
 check "POST /performances" 201 "$PERF"
-PERFORMANCE_ID=$(jq -r '.performanceId' "$TMP_DIR/perf.json")
+PERFORMANCE_ID=$(jq -r '.data.performanceId' "$TMP_DIR/perf.json")
 
 MY_PERF=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/voice/performances/my" -H "$AUTH")
 check "GET /performances/my" 200 "$MY_PERF"
@@ -327,7 +327,7 @@ COMPOSER2_TOKEN=$(curl -s -X POST "$HOST/identity/auth/login" \
 
 LYRICS2=$(curl -s -X POST "$HOST/lyrics/lyrics" \
   -H "$AUTH" -H "Content-Type: application/json" \
-  -d "{\"tuneId\":\"$TUNE_ID\",\"title\":\"Second Smoke Lyrics\",\"language\":\"English\",\"lyrics\":\"na na na\"}" | jq -r '.lyricsId')
+  -d "{\"tuneId\":\"$TUNE_ID\",\"title\":\"Second Smoke Lyrics\",\"language\":\"English\",\"lyrics\":\"na na na\"}" | jq -r '.data.lyricsId')
 
 NEG_APPROVE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/lyrics/lyrics/$LYRICS2/approve" \
   -H "Authorization: Bearer $COMPOSER2_TOKEN")

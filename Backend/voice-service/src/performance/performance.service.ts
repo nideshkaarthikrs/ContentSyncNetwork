@@ -21,7 +21,11 @@ export class PerformanceService {
 
   async upload(singerId: string, dto: CreatePerformanceDto, filename: string) {
     const record = await this.repo.create(singerId, dto, `/uploads/${filename}`);
-    return { performanceId: toDisplayId(record.sequenceNumber) };
+    return {
+      status: 'SUCCESS',
+      message: 'Performance uploaded',
+      data: { performanceId: toDisplayId(record.sequenceNumber) },
+    };
   }
 
   async getMyPerformances(singerId: string, page: number, pageSize: number) {
@@ -73,6 +77,10 @@ export class PerformanceService {
     }
     const scores = { pitchScore: 92, clarityScore: 90, rhythmScore: 88, overallScore: 90 };
     await this.repo.updateScores(record.id, scores);
-    return { pitch: 92, clarity: 90, rhythm: 88, overall: 90 };
+    return {
+      status: 'SUCCESS',
+      message: 'Performance analyzed',
+      data: { pitch: 92, clarity: 90, rhythm: 88, overall: 90 },
+    };
   }
 }

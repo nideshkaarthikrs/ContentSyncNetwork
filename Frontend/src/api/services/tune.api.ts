@@ -34,7 +34,6 @@ export interface TuneAnalysis {
 }
 
 export const tuneService = {
-  // Response is { tuneId, status } at the root (not the standard envelope) — do not use unwrap().
   create: (payload: CreateTunePayload, audio: RNFile) => {
     const form = new FormData();
     form.append("title", payload.title);
@@ -44,8 +43,8 @@ export const tuneService = {
     if (payload.bpm !== undefined) form.append("bpm", String(payload.bpm));
     appendRNFile(form, "audio", audio);
     return tuneApi
-      .post<{ tuneId: string; status: string }>("/tunes", form)
-      .then((res) => res.data);
+      .post<CsnEnvelope<{ tuneId: string; status: string }>>("/tunes", form)
+      .then((res) => unwrap(res.data));
   },
 
   getMyTunes: (page = 1, limit = 10) =>

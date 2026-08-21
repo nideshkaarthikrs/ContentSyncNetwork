@@ -33,7 +33,11 @@ export class LyricsService {
 
   async submit(authorId: string, dto: CreateLyricsDto) {
     const record = await this.repo.create(authorId, dto);
-    return { lyricsId: toDisplayId(record.sequenceNumber), status: 'SUBMITTED' };
+    return {
+      status: 'SUCCESS',
+      message: 'Lyrics submitted',
+      data: { lyricsId: toDisplayId(record.sequenceNumber), status: 'SUBMITTED' },
+    };
   }
 
   async update(lyricsId: string, requesterId: string, dto: UpdateLyricsDto) {
@@ -107,10 +111,14 @@ export class LyricsService {
 
   generate(_dto: GenerateLyricsDto) {
     return {
-      versions: [
-        { version: 'A', lyrics: 'Mazhai mazhai kaadhal mazhai...' },
-        { version: 'B', lyrics: 'Nenjil oru poo malarndhadhu...' },
-      ],
+      status: 'SUCCESS',
+      message: 'Lyrics generated',
+      data: {
+        versions: [
+          { version: 'A', lyrics: 'Mazhai mazhai kaadhal mazhai...' },
+          { version: 'B', lyrics: 'Nenjil oru poo malarndhadhu...' },
+        ],
+      },
     };
   }
 }

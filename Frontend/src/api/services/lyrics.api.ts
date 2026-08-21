@@ -35,15 +35,15 @@ export const lyricsService = {
       )
       .then((res) => unwrap(res.data)),
 
-  // Response is a raw { versions: [...] } object with no envelope — do not use unwrap().
   generate: (payload: GenerateLyricsPayload) =>
     lyricsApi
-      .post<{ versions: { version: string; lyrics: string }[] }>("/ai/lyrics/generate", payload)
-      .then((res) => res.data),
+      .post<CsnEnvelope<{ versions: { version: string; lyrics: string }[] }>>("/ai/lyrics/generate", payload)
+      .then((res) => unwrap(res.data)),
 
-  // Response is { lyricsId, status } at the root — do not use unwrap().
   submit: (payload: CreateLyricsPayload) =>
-    lyricsApi.post<{ lyricsId: string; status: string }>("/lyrics", payload).then((res) => res.data),
+    lyricsApi
+      .post<CsnEnvelope<{ lyricsId: string; status: string }>>("/lyrics", payload)
+      .then((res) => unwrap(res.data)),
 
   update: (lyricsId: string, payload: Partial<CreateLyricsPayload>) =>
     lyricsApi

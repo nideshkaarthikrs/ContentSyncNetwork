@@ -37,7 +37,11 @@ export class TuneService {
       actorUserId: ownerId,
       title: dto.title,
     }).catch(() => {});
-    return { tuneId: toDisplayId(tune.sequenceNumber), status: 'UPLOADED' };
+    return {
+      status: 'SUCCESS',
+      message: 'Tune uploaded',
+      data: { tuneId: toDisplayId(tune.sequenceNumber), status: 'UPLOADED' },
+    };
   }
 
   async getMyTunes(ownerId: string, page: number, limit: number) {

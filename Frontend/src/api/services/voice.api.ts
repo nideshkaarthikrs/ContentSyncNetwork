@@ -23,13 +23,14 @@ export interface PerformanceAnalysis {
 }
 
 export const voiceService = {
-  // Response is { performanceId } at the root — do not use unwrap().
   upload: (payload: { tuneId: string; lyricsId: string }, file: RNFile) => {
     const form = new FormData();
     form.append("tuneId", payload.tuneId);
     form.append("lyricsId", payload.lyricsId);
     appendRNFile(form, "file", file);
-    return voiceApi.post<{ performanceId: string }>("/performances", form).then((res) => res.data);
+    return voiceApi
+      .post<CsnEnvelope<{ performanceId: string }>>("/performances", form)
+      .then((res) => unwrap(res.data));
   },
 
   getMyPerformances: (page = 1, pageSize = 10) =>
@@ -45,7 +46,8 @@ export const voiceService = {
       .get<CsnEnvelope<Performance>>(`/performances/${performanceId}`)
       .then((res) => unwrap(res.data)),
 
-  // Response is the raw scores object with no envelope — do not use unwrap().
   analyze: (performanceId: string) =>
-    voiceApi.post<PerformanceAnalysis>(`/performances/${performanceId}/analyze`).then((res) => res.data),
+    voiceApi
+      .post<CsnEnvelope<PerformanceAnalysis>>(`/performances/${performanceId}/analyze`)
+      .then((res) => unwrap(res.data)),
 };

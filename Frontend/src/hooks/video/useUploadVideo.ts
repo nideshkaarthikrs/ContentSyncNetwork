@@ -5,6 +5,7 @@ import { RNFile } from "../../api/rnFile";
 
 export function useUploadVideo() {
   return useMutation({
-    mutationFn: (file: RNFile) => videoService.uploadVideo(file),
+    mutationFn: ({ file, kind }: { file: RNFile; kind?: "MOOD_BOARD" }) =>
+      videoService.uploadVideo(file, kind),
   });
 }

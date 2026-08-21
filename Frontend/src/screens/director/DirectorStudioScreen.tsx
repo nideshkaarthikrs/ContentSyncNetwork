@@ -97,7 +97,7 @@ export default function DirectorStudioScreen({
 
       if (moodBoard) {
         try {
-          await uploadVideo.mutateAsync(moodBoard);
+          await uploadVideo.mutateAsync({ file: moodBoard, kind: "MOOD_BOARD" });
         } catch {
           // Mood board upload is a bonus step; a failure here shouldn't block the project creation.
         }

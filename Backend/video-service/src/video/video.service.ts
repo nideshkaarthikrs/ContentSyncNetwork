@@ -41,14 +41,18 @@ export class VideoService {
     };
   }
 
-  async uploadVideo(uploaderId: string, uploaderUserId: string, filename: string) {
+  async uploadVideo(uploaderId: string, uploaderUserId: string, filename: string, kind?: 'MOOD_BOARD') {
     const video = await this.repo.createVideo(uploaderId, uploaderUserId, `/uploads/${filename}`);
-    postInternal(`${this.config.get<string>('feedService.url')}/internal/feed-items`, this.config.get<string>('internal.secret'), {
-      type: 'VIDEO',
-      sourceId: toVideoDisplayId(video.sequenceNumber),
-      actorUserId: uploaderUserId,
-      title: 'New video uploaded',
-    }).catch(() => {});
+    // Mood-board images are uploaded through this same endpoint (DirectorStudioScreen)
+    // but aren't videos, so they shouldn't produce a "New video uploaded" feed post.
+    if (kind !== 'MOOD_BOARD') {
+      postInternal(`${this.config.get<string>('feedService.url')}/internal/feed-items`, this.config.get<string>('internal.secret'), {
+        type: 'VIDEO',
+        sourceId: toVideoDisplayId(video.sequenceNumber),
+        actorUserId: uploaderUserId,
+        title: 'New video uploaded',
+      }).catch(() => {});
+    }
     return {
       status: 'SUCCESS',
       message: 'Video uploaded',

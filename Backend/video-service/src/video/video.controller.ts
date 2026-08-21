@@ -18,6 +18,7 @@ import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateVideoProjectDto } from './dto/create-video-project.dto';
 import { GenerateStoryboardDto } from './dto/generate-storyboard.dto';
+import { UploadVideoDto } from './dto/upload-video.dto';
 import { VideoService } from './video.service';
 
 @Controller('video-projects')
@@ -60,11 +61,11 @@ export class VideoController {
       },
     }),
   )
-  upload(@UploadedFile() file: Express.Multer.File, @Request() req) {
+  upload(@UploadedFile() file: Express.Multer.File, @Body() dto: UploadVideoDto, @Request() req) {
     if (!file) {
       throw new BadRequestException({ status: 'ERROR', errorCode: 'CSN-VIDEO-001', message: 'Video file is required' });
     }
-    return this.videoService.uploadVideo(req.user.id, req.user.userId, file.filename);
+    return this.videoService.uploadVideo(req.user.id, req.user.userId, file.filename, dto.kind);
   }
 
   @Get(':videoId')

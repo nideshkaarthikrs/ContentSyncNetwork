@@ -29,9 +29,14 @@ export const videoService = {
       .then((res) => unwrap(res.data)),
 
   // video-service's upload endpoint has no field linking it to a video project (backend limitation).
-  uploadVideo: (file: RNFile) => {
+  // `kind: "MOOD_BOARD"` tells video-service this upload is a mood-board image, not an
+  // actual video, so it skips creating a "New video uploaded" feed post for it.
+  uploadVideo: (file: RNFile, kind?: "MOOD_BOARD") => {
     const form = new FormData();
     appendRNFile(form, "file", file);
+    if (kind) {
+      form.append("kind", kind);
+    }
     return videoApi.post<CsnEnvelope<Video>>("/videos", form).then((res) => unwrap(res.data));
   },
 

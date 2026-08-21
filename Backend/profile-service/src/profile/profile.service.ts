@@ -28,6 +28,14 @@ export class ProfileService {
       }
     }
 
+    if (profile.publicProfile === false && requester?.userId !== userId) {
+      throw new ForbiddenException({
+        status: 'ERROR',
+        errorCode: 'CSN-PROFILE-PRIVATE',
+        message: 'This profile is private',
+      });
+    }
+
     const followers = await this.followRepo.countFollowers(userId);
 
     return {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { postInternal } from '../shared/internal-http.client';
 import { CreateVideoProjectDto } from './dto/create-video-project.dto';
@@ -59,7 +59,7 @@ export class VideoService {
     };
   }
 
-  async getVideoById(videoId: string) {
+  async getVideoById(videoId: string, requesterUserId: string) {
     const seq = parseVideoDisplayId(videoId);
     const record = await this.repo.findVideoBySequenceNumber(seq);
     if (!record) {
@@ -68,6 +68,9 @@ export class VideoService {
         errorCode: 'CSN-6001',
         message: 'Video not found',
       });
+    }
+    if (record.uploaderUserId !== requesterUserId) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-6002', message: 'You are not the owner of this video' });
     }
     return {
       status: 'SUCCESS',

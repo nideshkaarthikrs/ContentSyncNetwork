@@ -74,14 +74,14 @@ export class PerformanceController {
   @Get(':performanceId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getById(@Param('performanceId') performanceId: string) {
-    return this.performanceService.getById(performanceId);
+  getById(@Param('performanceId') performanceId: string, @Request() req) {
+    return this.performanceService.getById(performanceId, req.user.userId);
   }
 
   @Post(':performanceId/analyze')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  analyze(@Param('performanceId') performanceId: string) {
-    return this.performanceService.analyze(performanceId);
+  analyze(@Param('performanceId') performanceId: string, @Request() req) {
+    return this.performanceService.analyze(performanceId, req.user.userId);
   }
 }

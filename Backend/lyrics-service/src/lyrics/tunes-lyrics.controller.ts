@@ -1,4 +1,5 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LyricsService } from './lyrics.service';
 
 @Controller('tunes')
@@ -6,6 +7,7 @@ export class TuneLyricsController {
   constructor(private readonly lyricsService: LyricsService) {}
 
   @Get(':tuneId/lyrics')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   listForTune(
     @Param('tuneId') tuneId: string,

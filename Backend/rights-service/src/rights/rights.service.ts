@@ -36,7 +36,8 @@ export class RightsService {
    * Verifies the caller owns the asset they're listing, via the owning
    * service's internal owner endpoint. Fails closed: an unreachable service or
    * unknown asset both refuse the listing. SONG has no owning service in this
-   * codebase, so it can't be verified — allowed through as before.
+   * codebase, so ownership can't be verified — fail closed and reject the
+   * listing rather than allow it through unchecked.
    */
   private async assertCallerOwnsAsset(userDisplayId: string, assetId: string, assetType: string) {
     let ownerUrl: string;
@@ -45,7 +46,7 @@ export class RightsService {
     } else if (assetType === 'VIDEO') {
       ownerUrl = `${this.config.get<string>('videoService.url')}/internal/videos/${assetId}/owner`;
     } else {
-      return;
+      throw new BadRequestException(error('CSN-RIGHTS-008', 'SONG assets cannot be listed — ownership cannot be verified'));
     }
     const owner = await getInternal<{ data: { ownerUserId: string } }>(
       ownerUrl,
@@ -221,7 +222,10 @@ export class RightsService {
       throw new NotFoundException(error('CSN-RIGHTS-001', `Claim ${claimId} not found`));
     }
     if (record.claimantId !== user.id) {
-      throw new ForbiddenException(error('CSN-RIGHTS-006', 'You do not have access to this claim'));
+      const listing = await this.repo.findListingByAssetId(record.assetId);
+      if (!listing || listing.ownerId !== user.id) {
+        throw new ForbiddenException(error('CSN-RIGHTS-006', 'You do not have access to this claim'));
+      }
     }
     return {
       status: 'SUCCESS',

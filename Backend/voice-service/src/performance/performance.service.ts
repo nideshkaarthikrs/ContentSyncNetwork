@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePerformanceDto } from './dto/create-performance.dto';
 import { PerformanceRepository } from './performance.repository';
 
@@ -38,7 +38,7 @@ export class PerformanceService {
     };
   }
 
-  async getById(performanceId: string) {
+  async getById(performanceId: string, requesterId: string) {
     const seq = parseDisplayId(performanceId);
     const record = await this.repo.findBySequenceNumber(seq);
     if (!record) {
@@ -48,6 +48,9 @@ export class PerformanceService {
         message: 'Performance not found',
       });
     }
+    if (record.singerId !== requesterId) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-5002', message: 'You are not the owner of this performance' });
+    }
     return {
       status: 'SUCCESS',
       message: 'Performance retrieved',
@@ -55,7 +58,7 @@ export class PerformanceService {
     };
   }
 
-  async analyze(performanceId: string) {
+  async analyze(performanceId: string, requesterId: string) {
     const seq = parseDisplayId(performanceId);
     const record = await this.repo.findBySequenceNumber(seq);
     if (!record) {
@@ -64,6 +67,9 @@ export class PerformanceService {
         errorCode: 'CSN-5001',
         message: 'Performance not found',
       });
+    }
+    if (record.singerId !== requesterId) {
+      throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-5002', message: 'You are not the owner of this performance' });
     }
     const scores = { pitchScore: 92, clarityScore: 90, rhythmScore: 88, overallScore: 90 };
     await this.repo.updateScores(record.id, scores);

@@ -34,6 +34,7 @@ export class LyricsController {
   }
 
   @Get(':lyricsId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   getById(@Param('lyricsId') lyricsId: string) {
     return this.lyricsService.getById(lyricsId);

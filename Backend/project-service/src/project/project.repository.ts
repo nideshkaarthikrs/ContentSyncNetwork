@@ -17,7 +17,7 @@ export class ProjectRepository {
     const where = {
       OR: [
         { ownerId },
-        { members: { some: { userDisplayId: memberDisplayId } } },
+        { members: { some: { userDisplayId: memberDisplayId, inviteStatus: 'ACCEPTED' as any } } },
       ],
     };
     const [projects, total] = await Promise.all([

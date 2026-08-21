@@ -70,8 +70,8 @@ export class VideoController {
   @Get(':videoId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getById(@Param('videoId') videoId: string) {
-    return this.videoService.getVideoById(videoId);
+  getById(@Param('videoId') videoId: string, @Request() req) {
+    return this.videoService.getVideoById(videoId, req.user.userId);
   }
 }
 

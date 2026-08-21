@@ -69,6 +69,7 @@ export class TuneController {
   }
 
   @Get(':tuneId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   getTune(@Param('tuneId') tuneId: string) {
     return this.tuneService.getTune(tuneId);

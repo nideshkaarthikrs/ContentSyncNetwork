@@ -61,8 +61,7 @@ which checks an `x-internal-secret` header against `INTERNAL_SERVICE_SECRET`
 (same shared-value convention as `JWT_SECRET` — every service's `.env` must agree).
 This is deliberately not JWT-based since there's no end user in these calls.
 Current wiring: tune-service/video-service/project-service → feed-service
-(`POST /internal/feed-items`), rights-service → payment-service
-(`POST /internal/transactions`), profile-service/project-service/rights-service/
+(`POST /internal/feed-items`), profile-service/project-service/rights-service/
 voting-service → notification-service (`POST /internal/notifications`).
 
 **One deliberate exception**: voting-service has no local record of who owns a
@@ -86,6 +85,22 @@ via the same `getInternal()` helper pattern (added to chat-service's
 `src/shared/internal-http.client.ts`). Unlike the voting-service exception, failure
 here does block the primary action — `getInternal()` returns `null` on any failure,
 which both call sites treat as "not a member" (fail closed, not open).
+
+**A third synchronous exception — the money path**: rights-service's
+`purchase()` calls payment-service's `POST /internal/transactions/transfer`
+**synchronously and awaited**, via `postInternalStrict()` (added alongside
+`postInternal()`/`getInternal()` in rights-service's
+`src/shared/internal-http.client.ts`). Fire-and-forget is unacceptable here for
+two reasons: the caller must know whether the buyer could actually afford the
+purchase, and a swallowed failure means the ledger silently disagrees with what
+the buyer now owns. Unlike `postInternal()`, `postInternalStrict()` throws
+`InternalCallError` on a non-2xx, a network error or a timeout — and sets
+`status` **only** when the receiver actually answered, so callers can tell
+"definitely didn't happen" apart from "outcome unknown". On any failure
+rights-service runs a compensating DB transaction (delete the `Purchase`, revert
+the listing to `AVAILABLE`) and returns 400. Use `postInternalStrict()` only
+where "the call silently didn't happen" is not an acceptable outcome; everything
+else stays on `postInternal()`.
 
 ### Smoke test
 A committed script `smoke-test.sh` (Backend root) exercises all 13 services end-to-end in workflow order (register → login → tune → lyrics → performance → video → project → chat → vote → feed → rights → payment → notifications → logout), then runs a negative-assertion section: cross-user 403s, webhook without the internal secret, malformed display IDs (404 not 500), duplicate-mobile messaging, upload size/MIME rejections, invite re-flip, and concurrency races (refresh-token rotation, withdrawal overdraw). ~86 checks; it chains IDs between services, prints PASS/FAIL per check, and exits 1 if anything fails. Run it with the stack up to verify the full integration:

@@ -21,18 +21,33 @@ Three controllers in one `RightsModule`:
     was the only reason the marketplace ever appeared to work. Once `purchase()` started
     requiring a real listing (to know who to credit and for how much), this endpoint became
     load-bearing, not optional.
-  - `GET /marketplace/rights` — paginated listings (`?type=TUNE|SONG|VIDEO`, `?page=1&pageSize=20`)
+  - `GET /marketplace/rights` — paginated listings (`?type=TUNE|SONG|VIDEO`, `?page=1&pageSize=20`),
+    filtered to `status: AVAILABLE` — browse must only show what can actually be bought
+    (`findListingByAssetId` already filtered this way, so SOLD listings shown here always 404'd on purchase)
   - `GET /marketplace/rights/my` — paginated listings owned by the caller, includes
     `soldCount` (listings with `status: SOLD`); added for the Analytics dashboard's
     "Rights Listed"/"Rights Sold" KPIs, mirroring the `GET /projects/my` convention
   - `POST /marketplace/purchase` — body `{ assetId, licenseType }`; 404 `CSN-RIGHTS-002`
-    if no `AVAILABLE` listing exists for the asset; on success marks the listing
-    `SOLD`, creates a `COMPLETED` `Purchase` record (with `price`/`sellerId`/`sellerUserId`
-    captured from the listing — there's no real payment gateway in this codebase to
-    wait on, so completion is synchronous), and fires two fire-and-forget internal calls:
-    to payment-service (`POST /internal/transactions`) crediting the listing owner
-    with a `MARKETPLACE_SALE` transaction, and to notification-service
-    (`POST /internal/notifications`) notifying the seller
+    if no `AVAILABLE` listing exists for the asset. Three steps:
+    1. **Claim** — `purchaseListing` flips the listing `AVAILABLE`→`SOLD` with a
+       conditional `updateMany` and creates the `COMPLETED` `Purchase` row in one DB
+       transaction; a losing concurrent buyer gets 409 `CSN-RIGHTS-005`.
+    2. **Pay** — a **synchronous, awaited** `postInternalStrict` to payment-service's
+       `POST /internal/transactions/transfer`, which debits the buyer and credits the
+       seller atomically. This is deliberately *not* fire-and-forget: the old code
+       fired `POST /internal/transactions` and forgot it, which only ever credited the
+       seller — the buyer was never debited (marketplace goods were free) and a failed
+       call was silently swallowed.
+    3. **Compensate on failure** — any non-2xx / timeout means no money moved, so
+       `revertPurchase` deletes the `Purchase` row and puts the listing back to
+       `AVAILABLE` in one DB transaction, and the caller gets 400 `CSN-RIGHTS-009`
+       (payment reported `CSN-PAY-002`, insufficient balance) or 400 `CSN-RIGHTS-010`
+       (any other payment failure). A transfer failure with *no HTTP response* is
+       logged at ERROR as an UNKNOWN outcome before compensating — that is the one
+       case (response lost after commit) that can need manual reconciliation.
+    The seller notification (`POST /internal/notifications`) stays fire-and-forget:
+    it runs only after the money moved, and a downed notification-service must never
+    fail or roll back a completed purchase.
 - `DrmController` (`/drm`) — JWT required:
   - `POST /drm/token` — body `{ assetId }`; stateless stub; returns `{ streamUrl: "https://cdn.csn.ai/stream/:assetId?token=<uuid>" }`
 - `CopyrightController` (`/copyright`) — JWT required:

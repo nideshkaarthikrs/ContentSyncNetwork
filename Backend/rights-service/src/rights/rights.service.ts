@@ -1,7 +1,7 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { getInternal, postInternal } from '../shared/internal-http.client';
+import { InternalCallError, getInternal, postInternal, postInternalStrict } from '../shared/internal-http.client';
 import { error } from '../shared/response.helper';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { DrmTokenDto } from './dto/drm-token.dto';
@@ -27,6 +27,8 @@ function parseClaimDisplayId(claimId: string): number {
 
 @Injectable()
 export class RightsService {
+  private readonly logger = new Logger(RightsService.name);
+
   constructor(
     private readonly repo: RightsRepository,
     private readonly config: ConfigService,
@@ -154,14 +156,59 @@ export class RightsService {
       throw new ConflictException(error('CSN-RIGHTS-005', 'Listing already sold'));
     }
     const purchaseId = toPurchaseDisplayId(purchase.sequenceNumber);
-    postInternal(`${this.config.get<string>('paymentService.url')}/internal/transactions`, this.config.get<string>('internal.secret'), {
-      userId: listing.ownerId,
-      userDisplayId: listing.ownerUserId,
-      type: 'MARKETPLACE_SALE',
-      amount: listing.price,
-      sourceId: dto.assetId,
-      reference: purchaseId,
-    }).catch(() => {});
+
+    // Money moves synchronously. This used to be a fire-and-forget POST that
+    // only ever CREDITED the seller — the buyer was never debited and a failed
+    // call was swallowed, so marketplace goods were free and the ledger could
+    // silently lose the sale. The transfer endpoint writes both legs atomically
+    // and refuses when the buyer can't cover the price; anything other than a
+    // 2xx here means no money moved, so we undo the claim.
+    try {
+      await postInternalStrict(
+        `${this.config.get<string>('paymentService.url')}/internal/transactions/transfer`,
+        this.config.get<string>('internal.secret'),
+        {
+          buyerId: user.id,
+          buyerUserId: user.userId,
+          sellerId: listing.ownerId,
+          sellerUserId: listing.ownerUserId,
+          amount: listing.price,
+          sourceId: dto.assetId,
+          reference: purchaseId,
+        },
+      );
+    } catch (err) {
+      const callError = err as InternalCallError;
+      if (callError.status === undefined) {
+        // No response: payment-service may or may not have committed the
+        // transfer. We still roll the purchase back (the buyer must not be left
+        // owning something the ledger disagrees about), but this is the one
+        // case that can need manual reconciliation, so make it findable.
+        this.logger.error(
+          `Transfer outcome UNKNOWN for ${purchaseId} (buyer ${user.userId}, seller ${listing.ownerUserId}, ` +
+            `amount ${listing.price}): ${callError.message}. Rolling back the purchase — verify no buyer debit was written.`,
+        );
+      }
+      try {
+        await this.repo.revertPurchase(purchase.id, listing.id);
+      } catch (revertErr) {
+        // Compensation itself failed. The listing stays SOLD with a Purchase row
+        // but (almost certainly) no buyer debit — a stuck listing, never a
+        // double charge. Surface it as a 500 rather than reporting success.
+        this.logger.error(
+          `Compensation FAILED for ${purchaseId} (listing ${listing.id}) after a failed transfer: ` +
+            `${(revertErr as Error).message}. Listing is stuck in SOLD and needs manual repair.`,
+        );
+        throw revertErr;
+      }
+      if (callError.errorCode === 'CSN-PAY-002') {
+        throw new BadRequestException(error('CSN-RIGHTS-009', 'Insufficient balance to complete this purchase'));
+      }
+      throw new BadRequestException(error('CSN-RIGHTS-010', 'Payment could not be completed — the purchase was cancelled'));
+    }
+
+    // Notification stays fire-and-forget: a downed notification-service must not
+    // fail (or roll back) a purchase whose money already moved.
     postInternal(`${this.config.get<string>('notificationService.url')}/internal/notifications`, this.config.get<string>('internal.secret'), {
       recipientUserId: listing.ownerUserId,
       type: 'MARKETPLACE_SALE',

@@ -7,7 +7,13 @@ export class RightsRepository {
 
   findListings(assetType: string | undefined, page: number, pageSize: number) {
     const skip = (page - 1) * pageSize;
-    const where = assetType ? { assetType: assetType as any } : {};
+    // Browse must only show what can actually be bought. Without the status
+    // filter, SOLD listings stayed in the marketplace feed and every attempt to
+    // buy one 404'd (findListingByAssetId already filters to AVAILABLE).
+    const where: Record<string, any> = { status: 'AVAILABLE' as any };
+    if (assetType) {
+      where.assetType = assetType as any;
+    }
     return Promise.all([
       this.prisma.rightsListing.findMany({
         where,
@@ -81,6 +87,23 @@ export class RightsRepository {
       }
       return tx.purchase.create({
         data: { assetId, licenseType, buyerId, buyerUserId, price, sellerId, sellerUserId, status: 'COMPLETED' },
+      });
+    });
+  }
+
+  /**
+   * Compensating action for a purchase whose payment leg failed: undoes exactly
+   * what purchaseListing did, in one transaction, so the listing is never left
+   * SOLD with no paid-for Purchase behind it. Both statements are scoped to the
+   * ids purchaseListing just created/claimed, so this can't clobber a different
+   * buyer's purchase.
+   */
+  async revertPurchase(purchaseId: string, listingId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.purchase.delete({ where: { id: purchaseId } });
+      await tx.rightsListing.update({
+        where: { id: listingId },
+        data: { status: 'AVAILABLE' as any },
       });
     });
   }

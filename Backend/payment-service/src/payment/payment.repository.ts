@@ -10,6 +10,18 @@ export function toSubscriptionDisplayId(sequenceNumber: number): string {
 /** Transaction types that credit the user (money in). */
 const CREDIT_TYPES = [TransactionType.MARKETPLACE_SALE, TransactionType.ROYALTY];
 
+/**
+ * Transaction budget for the marketplace transfer (see
+ * createTransferIfBalanceAllows). Deliberately tighter than Prisma's defaults
+ * (maxWait 2000 / timeout 5000) so the worst-case server-side commit window
+ * (1000 + 3000 = 4000ms) stays strictly inside the 5000ms AbortSignal that
+ * rights-service's postInternalStrict uses — a client-side timeout there
+ * triggers compensation, so the transaction must never be able to commit after
+ * the caller has given up on it.
+ */
+const TRANSFER_MAX_WAIT_MS = 1000;
+const TRANSFER_TIMEOUT_MS = 3000;
+
 @Injectable()
 export class PaymentRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -128,6 +140,17 @@ export class PaymentRepository {
    * no balance check, so it needs no lock — and because every transaction here
    * takes at most one advisory lock, two transfers in opposite directions
    * (A buys from B while B buys from A) cannot deadlock on lock ordering.
+   *
+   * The explicit transaction options are load-bearing, not tuning. rights-service
+   * calls this endpoint with a 5000ms AbortSignal and *compensates* (deletes the
+   * Purchase, reverts the listing to AVAILABLE) whenever it doesn't get an answer.
+   * Prisma's defaults here are maxWait 2000 + timeout 5000 — a worst case around
+   * 7s in which this transaction could still commit *after* the client gave up,
+   * leaving the buyer debited for a purchase that no longer exists. Capping the
+   * server budget at 1000 + 3000 = 4000ms worst case keeps the whole commit window
+   * strictly inside the client's patience: either we answer in time, or Prisma has
+   * already rolled the transaction back (P2028) and answered with an error. The
+   * advisory-lock wait counts against `timeout`, so contention is covered too.
    */
   createTransferIfBalanceAllows(params: {
     buyerId: string;
@@ -139,34 +162,37 @@ export class PaymentRepository {
     reference?: string;
   }) {
     const { buyerId, buyerUserId, sellerId, sellerUserId, amount, sourceId, reference } = params;
-    return this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${buyerId}))`;
-      const available = await this.computeAvailableBalance(tx, buyerId);
-      if (amount > available) {
-        return null;
-      }
-      const debit = await tx.transaction.create({
-        data: {
-          userId: buyerId,
-          userDisplayId: buyerUserId,
-          type: TransactionType.MARKETPLACE_PURCHASE,
-          amount,
-          sourceId,
-          reference,
-        },
-      });
-      const credit = await tx.transaction.create({
-        data: {
-          userId: sellerId,
-          userDisplayId: sellerUserId,
-          type: TransactionType.MARKETPLACE_SALE,
-          amount,
-          sourceId,
-          reference,
-        },
-      });
-      return { debit, credit };
-    });
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${buyerId}))`;
+        const available = await this.computeAvailableBalance(tx, buyerId);
+        if (amount > available) {
+          return null;
+        }
+        const debit = await tx.transaction.create({
+          data: {
+            userId: buyerId,
+            userDisplayId: buyerUserId,
+            type: TransactionType.MARKETPLACE_PURCHASE,
+            amount,
+            sourceId,
+            reference,
+          },
+        });
+        const credit = await tx.transaction.create({
+          data: {
+            userId: sellerId,
+            userDisplayId: sellerUserId,
+            type: TransactionType.MARKETPLACE_SALE,
+            amount,
+            sourceId,
+            reference,
+          },
+        });
+        return { debit, credit };
+      },
+      { maxWait: TRANSFER_MAX_WAIT_MS, timeout: TRANSFER_TIMEOUT_MS },
+    );
   }
 
   createTransaction(

@@ -32,6 +32,12 @@ Four controllers in one `PaymentModule`:
     `pg_advisory_xact_lock(hashtext(buyerId))`, refusing with 400 `CSN-PAY-002`
     when the buyer's available balance can't cover it. Callers must treat any
     non-2xx as "no money moved". Called **synchronously** by rights-service.
+    Its `$transaction` passes explicit `{ maxWait: 1000, timeout: 3000 }` instead
+    of Prisma's defaults (2000/5000): rights-service aborts the call at 5000ms and
+    *compensates*, so the server-side commit window (4000ms worst case, advisory-lock
+    wait included) must stay strictly inside the client's patience — otherwise a
+    contended transfer could commit after the caller already reverted the purchase.
+    If these two numbers ever change, they have to change together.
 - **Available balance** (`PaymentRepository.computeAvailableBalance`, the single
   definition used by withdrawals, transfers and the dashboard):
   `(MARKETPLACE_SALE + ROYALTY) − MARKETPLACE_PURCHASE − non-FAILED withdrawals`.

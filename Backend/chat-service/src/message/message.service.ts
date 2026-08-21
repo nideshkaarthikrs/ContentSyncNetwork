@@ -38,7 +38,9 @@ export class MessageService {
       senderName: record.senderName,
       sentAt: record.createdAt,
     };
-    this.gateway.broadcastMessage(projectId, data);
+    // Fire-and-forget: broadcasting (including its stale-membership re-checks)
+    // must never block or fail the REST response for sending the message.
+    this.gateway.broadcastMessage(projectId, data).catch(() => {});
     return {
       status: 'SUCCESS',
       message: 'Message sent',

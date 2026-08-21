@@ -58,10 +58,11 @@ export class ProjectRepository {
   }
 
   async updateInviteStatus(projectId: string, userDisplayId: string, status: string) {
-    return this.prisma.projectMember.update({
-      where: {
-        projectId_userDisplayId: { projectId, userDisplayId },
-      },
+    // updateMany (not update) so a missing/already-gone member row returns a
+    // zero count instead of throwing Prisma's P2025 -- the caller turns that
+    // into a clean 404 rather than an unhandled 500.
+    return this.prisma.projectMember.updateMany({
+      where: { projectId, userDisplayId },
       data: { inviteStatus: status as any },
     });
   }

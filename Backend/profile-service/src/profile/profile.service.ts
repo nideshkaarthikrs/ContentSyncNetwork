@@ -1,10 +1,15 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { FollowRepository } from '../follow/follow.repository';
+import { UPLOADS_ROOT } from '../shared/uploads-path';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileRepository } from './profile.repository';
 
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
+
   constructor(
     private readonly profileRepo: ProfileRepository,
     private readonly followRepo: FollowRepository,
@@ -85,8 +90,19 @@ export class ProfileService {
       });
     }
 
+    const existing = await this.profileRepo.findByUserId(userId);
     const avatarUrl = `/uploads/${filename}`;
     await this.profileRepo.updateAvatar(userId, avatarUrl);
+
+    if (existing?.avatarUrl && existing.avatarUrl !== avatarUrl) {
+      const oldFilename = existing.avatarUrl.replace(/^\/uploads\//, '');
+      await unlink(join(UPLOADS_ROOT, oldFilename)).catch((err) => {
+        if (err?.code !== 'ENOENT') {
+          this.logger.warn(`Failed to delete old avatar for ${userId}: ${err.message}`);
+        }
+      });
+    }
+
     return { status: 'SUCCESS', message: 'Photo uploaded', avatarUrl };
   }
 }

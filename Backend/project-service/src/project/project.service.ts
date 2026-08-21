@@ -124,7 +124,13 @@ export class ProjectService {
     if (!invite) {
       throw new ForbiddenException({ status: 'ERROR', errorCode: 'CSN-7005', message: 'You do not have a pending invite for this project' });
     }
-    await this.repo.updateInviteStatus(project.id, requesterUserId, dto.status);
+    const result = await this.repo.updateInviteStatus(project.id, requesterUserId, dto.status);
+    if (result.count === 0) {
+      // Row disappeared between the PENDING check above and the update
+      // (e.g. a concurrent request already resolved it) -- 404, not a
+      // Prisma P2025 surfacing as an unhandled 500.
+      throw new NotFoundException({ status: 'ERROR', errorCode: 'CSN-7007', message: 'Invite not found' });
+    }
     return {
       status: 'SUCCESS',
       message: 'Invite response recorded',

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateLyricsDto {
   @IsOptional()
@@ -11,5 +11,6 @@ export class UpdateLyricsDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20000)
   lyrics?: string;
 }

@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString, MaxLength } from 'class-validator';
 
 export class CreateLyricsDto {
   @IsString()
@@ -11,5 +11,6 @@ export class CreateLyricsDto {
   language: string;
 
   @IsString()
+  @MaxLength(20000)
   lyrics: string;
 }

@@ -1,4 +1,4 @@
-import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export enum FeedItemType {
   TUNE = 'TUNE',
@@ -17,6 +17,7 @@ export class CreateFeedItemDto {
   actorUserId: string;
 
   @IsString()
+  @MaxLength(200)
   title: string;
 
   @IsOptional()

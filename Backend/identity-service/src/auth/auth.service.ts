@@ -189,6 +189,9 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.repo.updatePasswordHash(userId, passwordHash);
+    // Revoke all existing sessions so a stolen/compromised refresh token
+    // can't keep issuing new access tokens after the password changes.
+    await this.repo.deleteAllRefreshTokensForUser(userId);
     return { status: 'SUCCESS', message: 'Password changed successfully' };
   }
 }

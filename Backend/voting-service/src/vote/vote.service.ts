@@ -66,17 +66,19 @@ export class VoteService {
   async getResults(entityId: string) {
     const voteCount = await this.repo.countByEntityId(entityId);
 
-    const entityRecord = await this.repo.findOneByEntityId(entityId);
-    if (!entityRecord) {
+    // Zero votes means no rank can be computed — rank is only meaningful
+    // among entities that have at least one vote.
+    if (voteCount === 0) {
       return {
         status: 'SUCCESS',
         message: 'Voting results retrieved',
-        data: { entityId, votes: 0, rank: 1 },
+        data: { entityId, votes: 0, rank: null },
       };
     }
 
+    const entityRecord = await this.repo.findOneByEntityId(entityId);
     const entitiesAhead = await this.repo.countEntitiesWithMoreVotes(
-      entityRecord.entityType,
+      entityRecord!.entityType,
       voteCount,
     );
     const rank = entitiesAhead + 1;

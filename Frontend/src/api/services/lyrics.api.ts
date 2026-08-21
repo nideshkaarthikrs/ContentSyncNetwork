@@ -7,7 +7,7 @@ export interface Lyrics {
   authorId: string;
   title: string;
   language: string;
-  lyrics: string;
+  lyricsText: string;
   status: string;
   createdAt: string;
   updatedAt: string;

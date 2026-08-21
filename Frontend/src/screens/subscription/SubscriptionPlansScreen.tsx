@@ -69,6 +69,8 @@ export default function SubscriptionPlansScreen({
 }: Props) {
   const [selectedPlan, setSelectedPlan] =
     useState<SubscriptionPlan>("PREMIUM");
+  // Session-local only: there is no GET endpoint for subscription status, so this
+  // resets on remount/app restart rather than reflecting a persisted subscription record.
   const [activePlan, setActivePlan] = useState<string | null>(null);
 
   const subscribe = useSubscribe();
@@ -112,11 +114,11 @@ export default function SubscriptionPlansScreen({
 
         <View style={styles.currentPlanCard}>
           <Text style={styles.currentLabel}>
-            Current Plan
+            Purchased this session
           </Text>
 
           <Text style={styles.currentPlan}>
-            {activePlan ?? "No active subscription"}
+            {activePlan ?? "Nothing purchased yet"}
           </Text>
         </View>
 

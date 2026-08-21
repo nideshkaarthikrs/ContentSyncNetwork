@@ -10,11 +10,19 @@ export interface RevenueDashboard {
     subscriptions: number;
     marketplaceSales: number;
   };
-  // royalties/contestWins are documented backend stubs (always 0) — no royalty-distribution
-  // or contest/prize feature exists anywhere in the app to generate them from.
+  // royalties is a real aggregation (sum of ROYALTY transactions) but is always 0 in
+  // practice today — nothing in this codebase creates ROYALTY rows yet. contestWins is
+  // a hardcoded backend stub (always 0) — no contest/prize feature exists to generate it.
   royalties: number;
   marketplaceSales: number;
   contestWins: number;
+  // The caller's own subscription plan payment — an expense, not revenue. Excluded from
+  // totalRevenue/availableBalance on the backend; surfaced separately so the FE can show
+  // it as a spend line instead of folding it into earnings.
+  subscriptionSpend: number;
+  // (marketplaceSales + royalties) minus buyer debits and non-FAILED withdrawals already
+  // taken — the actual amount a withdraw request can draw down.
+  availableBalance: number;
 }
 
 export const paymentService = {

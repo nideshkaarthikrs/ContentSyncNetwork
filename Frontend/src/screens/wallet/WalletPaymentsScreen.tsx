@@ -33,7 +33,15 @@ export default function WalletPaymentsScreen({
   const [lastWithdrawal, setLastWithdrawal] = useState<{ withdrawalId: string; status: string } | null>(null);
 
   const handleWithdraw = async () => {
-    const parsedAmount = parseFloat(amount);
+    const trimmedAmount = amount.trim();
+    // Whole numbers only, matching the backend's @IsInt @Min(1) on withdraw.dto.ts
+    // (WithdrawalRequest.amount is a Prisma Int column) — reject decimals like
+    // "500.50" client-side instead of letting the request 400 at the network.
+    if (!/^\d+$/.test(trimmedAmount)) {
+      Alert.alert("Enter a whole number", "Withdrawal amount must be a whole number of rupees (no decimals).");
+      return;
+    }
+    const parsedAmount = parseInt(trimmedAmount, 10);
     if (!parsedAmount || parsedAmount <= 0) {
       Alert.alert("Enter an amount", "Please enter a valid withdrawal amount.");
       return;
@@ -83,20 +91,29 @@ export default function WalletPaymentsScreen({
 
         <View style={styles.walletCard}>
           <Text style={styles.balanceLabel}>
-            Total Revenue
+            Withdrawable balance
           </Text>
 
           {isLoading ? (
             <ActivityIndicator color="#FFF" style={{ marginTop: 10 }} />
           ) : (
             <Text style={styles.balance}>
-              ₹{(data?.totalRevenue ?? 0).toLocaleString("en-IN")}
+              ₹{(data?.availableBalance ?? 0).toLocaleString("en-IN")}
             </Text>
           )}
 
           <Text style={styles.updated}>
-            Royalties ₹{data?.royalties ?? 0} • Marketplace ₹{data?.marketplaceSales ?? 0} • Contests ₹{data?.contestWins ?? 0}
+            Earnings ₹{(data?.totalRevenue ?? 0).toLocaleString("en-IN")}
+            {data?.marketplaceSales ? ` • Marketplace ₹${data.marketplaceSales.toLocaleString("en-IN")}` : ""}
+            {data?.royalties ? ` • Royalties ₹${data.royalties.toLocaleString("en-IN")}` : ""}
+            {data?.contestWins ? ` • Contests ₹${data.contestWins.toLocaleString("en-IN")}` : ""}
           </Text>
+
+          {!!data?.subscriptionSpend && (
+            <Text style={styles.spendLine}>
+              − ₹{data.subscriptionSpend.toLocaleString("en-IN")} spent on subscription
+            </Text>
+          )}
         </View>
 
         {/* Actions */}
@@ -122,8 +139,8 @@ export default function WalletPaymentsScreen({
           <View style={styles.withdrawForm}>
             <TextInput
               style={styles.input}
-              placeholder="Amount"
-              keyboardType="numeric"
+              placeholder="Amount (whole rupees only)"
+              keyboardType="number-pad"
               value={amount}
               onChangeText={setAmount}
             />
@@ -204,6 +221,13 @@ const styles = StyleSheet.create({
     color: "#E9D5FF",
     marginTop: 8,
     fontSize: 12
+  },
+
+  spendLine: {
+    color: "#FCA5A5",
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: "600"
   },
 
   actionRow: {

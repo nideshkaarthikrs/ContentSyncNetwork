@@ -20,7 +20,10 @@ export function useSendMessage(projectId: string | undefined) {
       queryClient.setQueryData<MessagesPage | undefined>(queryKey, (old) => {
         if (!old) return old;
         if (old.messages.some((m) => m.messageId === message.messageId)) return old;
-        return { ...old, messages: [...old.messages, message] };
+        // Backend history is newest-first (desc); prepend so the just-sent
+        // message lands at index 0, consistent with that ordering (mirrors
+        // useChatSocket's handling of the same query cache).
+        return { ...old, messages: [message, ...old.messages] };
       });
     },
   });

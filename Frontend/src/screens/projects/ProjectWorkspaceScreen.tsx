@@ -510,8 +510,14 @@ function ChatTab({ projectId }: { projectId: string }) {
         data={data?.messages ?? []}
         keyExtractor={(item) => item.messageId}
         contentContainerStyle={{ padding: 20 }}
-        inverted={false}
-        ListEmptyComponent={!isLoading ? <Text style={styles.emptyText}>No messages yet. Say hi!</Text> : null}
+        inverted
+        // `inverted` flips the whole list content (including ListEmptyComponent),
+        // so counter-flip the empty-state text to keep it upright.
+        ListEmptyComponent={
+          !isLoading ? (
+            <Text style={[styles.emptyText, { transform: [{ scaleY: -1 }] }]}>No messages yet. Say hi!</Text>
+          ) : null
+        }
         renderItem={({ item }) => (
           <View
             style={[

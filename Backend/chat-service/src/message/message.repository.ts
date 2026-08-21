@@ -18,7 +18,7 @@ export class MessageRepository {
         where: { projectId },
         skip,
         take: pageSize,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.message.count({ where: { projectId } }),
     ]);

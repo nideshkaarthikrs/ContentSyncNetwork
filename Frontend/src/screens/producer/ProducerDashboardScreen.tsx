@@ -1,7 +1,5 @@
-import {
-  Ionicons,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {
   ScrollView,
   StyleSheet,

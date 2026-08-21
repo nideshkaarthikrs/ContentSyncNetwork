@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import Feather from "react-native-vector-icons/Feather";
 import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 
 import { useTune } from "../../hooks/tune/useTune";

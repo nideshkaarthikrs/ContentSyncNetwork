@@ -1,8 +1,8 @@
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
 import { serviceBaseUrl } from "../config/services";
+import * as SecureStore from "../utils/secureStore";
 import { useAudioPlayerStore } from "./audioPlayerStore";
 
 const TOKEN_KEY = "csn.token";

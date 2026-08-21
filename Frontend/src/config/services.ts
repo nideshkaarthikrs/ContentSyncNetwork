@@ -1,3 +1,5 @@
+import Config from "react-native-config";
+
 export type ServiceName =
   | "identity"
   | "profile"
@@ -36,12 +38,12 @@ const PROD_HOST = "https://apps.vapko-ti.com/csn";
 // Release builds default to production; dev builds must set the env var — a
 // dev build silently talking to production (the old behavior when .env was
 // missing) is exactly the kind of surprise this throw exists to prevent.
-const API_HOST = process.env.EXPO_PUBLIC_API_HOST ?? (__DEV__ ? "" : PROD_HOST);
+const API_HOST = Config.API_HOST ?? (__DEV__ ? "" : PROD_HOST);
 
 export function apiOrigin(): string {
   if (!API_HOST) {
     throw new Error(
-      "EXPO_PUBLIC_API_HOST is not set. Copy Frontend/.env.example to Frontend/.env and set it to your dev machine's LAN IP (with the gateway port).",
+      "API_HOST is not set. Copy Frontend/.env.example to Frontend/.env and set it to your dev machine's LAN IP (with the gateway port), then rebuild the app.",
     );
   }
   return API_HOST;

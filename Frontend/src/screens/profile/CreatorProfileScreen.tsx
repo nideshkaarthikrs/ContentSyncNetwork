@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import Feather from "react-native-vector-icons/Feather";
+import { launchImageLibrary } from "react-native-image-picker";
 import {
   ActivityIndicator,
   Alert,
@@ -36,26 +36,25 @@ export default function CreatorProfileScreen({
     : FALLBACK_AVATAR;
 
   const handleChangePhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Permission needed", "Photo library permission is required to change your profile photo.");
+    const result = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
+    if (result.didCancel) return;
+    if (result.errorCode) {
+      Alert.alert(
+        result.errorCode === "permission" ? "Permission needed" : "Error",
+        result.errorCode === "permission"
+          ? "Photo library permission is required to change your profile photo."
+          : result.errorMessage ?? "Could not open photo library."
+      );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: false,
-      aspect: [1, 1],
-      quality: 0.8
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
     try {
       await uploadPhoto.mutateAsync({
         uri: asset.uri,
         name: asset.fileName ?? "photo.jpg",
-        type: asset.mimeType ?? "image/jpeg"
+        type: asset.type ?? "image/jpeg"
       });
     } catch (err) {
       Alert.alert("Upload failed", getErrorMessage(err));

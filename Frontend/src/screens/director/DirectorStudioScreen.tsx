@@ -1,8 +1,6 @@
-import {
-  Feather,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { launchImageLibrary } from "react-native-image-picker";
 import { useState } from "react";
 import {
   Alert,
@@ -60,23 +58,23 @@ export default function DirectorStudioScreen({
   const generateStoryboard = useGenerateStoryboard();
 
   const pickMoodBoard = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError("Photo library permission is required to upload a mood board.");
+    const result = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
+    if (result.didCancel) return;
+    if (result.errorCode) {
+      setError(
+        result.errorCode === "permission"
+          ? "Photo library permission is required to upload a mood board."
+          : result.errorMessage ?? "Could not open photo library."
+      );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.8
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
     setMoodBoard({
       uri: asset.uri,
       name: asset.fileName ?? "moodboard.jpg",
-      type: asset.mimeType ?? "image/jpeg"
+      type: asset.type ?? "image/jpeg"
     });
   };
 

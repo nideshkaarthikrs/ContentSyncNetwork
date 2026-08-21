@@ -1,56 +1,48 @@
-# Welcome to your Expo app 👋
+# CSN mobile app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native (bare CLI, RN 0.81.5) app for Android and iOS. No Expo SDK, no EAS — `android/` and `ios/` are real native projects checked into this repo, and permissions/build config live directly in `AndroidManifest.xml` / `Info.plist` / `Podfile` / `build.gradle`.
 
-## Get started
+## Prerequisites
 
-1. Install dependencies
+- Node.js, npm
+- Android Studio + Android SDK (for Android builds)
+- Xcode + CocoaPods (for iOS builds; installed via Bundler, see below)
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+npm install
+cp .env.example .env   # then edit API_HOST — see below
+cd ios && bundle install && bundle exec pod install && cd ..
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Running
 
-### Other setup steps
+```bash
+npm run android   # builds and installs on a connected device/emulator
+npm run ios        # builds and runs in the iOS simulator
+npm start           # Metro bundler only
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Environment variables
 
-## Learn more
+`API_HOST` (in `.env`) must point at your dev machine's **LAN IP** + the backend gateway port (e.g. `http://192.168.1.41:8080`) — a physical phone can't resolve `localhost` to your dev machine. Find your LAN IP with `ipconfig getifaddr en0` (macOS) or `ipconfig` (Windows).
 
-To learn more about developing your project with Expo, look at the following resources:
+Env vars are read via [`react-native-config`](https://github.com/lugg/react-native-config), not Expo's `EXPO_PUBLIC_*` convention. **Changing `.env` requires a native rebuild** — a Metro restart alone will not pick up the new value:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Android: re-run `npm run android` (occasionally `cd android && ./gradlew clean` first if it doesn't take)
+- iOS: re-run `bundle exec pod install`, then `npm run ios`
 
-## Join the community
+## Permissions
 
-Join our community of developers creating universal apps.
+There's no config-plugin layer (no `app.json` managed config). To add or change a permission, edit the native files directly:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Android: `android/app/src/main/AndroidManifest.xml`
+- iOS: `ios/CSN/Info.plist`
+
+## Building for release
+
+- **Android**: `cd android && ./gradlew assembleRelease` (APK) or `./gradlew bundleRelease` (AAB for Play Store).
+- **iOS**: open `ios/CSN.xcworkspace` in Xcode and use Product → Archive.
+
+There is no EAS Build step — this is a standard bare React Native release process.

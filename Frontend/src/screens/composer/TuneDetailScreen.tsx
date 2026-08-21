@@ -1,7 +1,5 @@
-import {
-  Feather,
-  Ionicons
-} from "@expo/vector-icons";
+import Feather from "react-native-vector-icons/Feather";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   ActivityIndicator,
   Alert,

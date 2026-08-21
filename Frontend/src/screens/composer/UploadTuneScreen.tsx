@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
+import Feather from "react-native-vector-icons/Feather";
+import { errorCodes, isErrorWithCode, pick } from "@react-native-documents/picker";
 import { useState } from "react";
 import {
   Alert,
@@ -49,17 +49,20 @@ export default function UploadTuneScreen({
   const analyzeTune = useAnalyzeTune();
 
   const pickAudio = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/flac", "audio/*"],
-      copyToCacheDirectory: true
-    });
-    if (result.canceled || !result.assets?.[0]) return;
+    let asset;
+    try {
+      [asset] = await pick({
+        type: ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/flac", "audio/*"],
+      });
+    } catch (err) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) return;
+      throw err;
+    }
 
-    const asset = result.assets[0];
     setAudioFile({
       uri: asset.uri,
       name: asset.name ?? "audio",
-      type: asset.mimeType ?? "audio/mpeg"
+      type: asset.type ?? "audio/mpeg"
     });
   };
 

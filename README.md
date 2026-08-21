@@ -2,14 +2,14 @@
 
 CSN is a collaboration platform for music and content creators — composers, lyricists, vocalists, video editors, and producers — to team up on projects, share and vote on work, chat in real time, license/sell rights to finished assets, and manage payouts.
 
-The system is split into an independently deployable **microservices backend** and a **React Native (Expo) mobile app**.
+The system is split into an independently deployable **microservices backend** and a **React Native mobile app** (bare CLI, Android + iOS).
 
 ## Repository structure
 
 ```
 .
 ├── Backend/     # 13 NestJS microservices (one per domain)
-└── Frontend/    # Expo / React Native mobile app
+└── Frontend/    # React Native (bare CLI) mobile app
 ```
 
 ## Backend
@@ -88,25 +88,26 @@ Note this bypasses the gateway — the service is only reachable on its own port
 
 ## Frontend
 
-`Frontend/` is an Expo-managed React Native app (TypeScript, Expo SDK 57) targeting Android and iOS.
+`Frontend/` is a bare React Native CLI app (TypeScript, RN 0.81.5) targeting Android and iOS — no Expo SDK, no EAS. Native `android/` and `ios/` projects are checked into the repo and are the source of truth for permissions/build config.
 
 ```bash
 cd Frontend
 cp .env.example .env
 npm install
-npx expo start
+cd ios && bundle install && bundle exec pod install && cd ..
+npm run android   # or: npm run ios
 ```
 
-Edit `.env` and set `EXPO_PUBLIC_API_HOST` to your dev machine's **LAN IP** + the gateway port (e.g. `http://192.168.1.41:8080`) — if you're testing on a physical phone via Expo Go, `localhost` won't resolve to your dev machine. Find your LAN IP with `ipconfig getifaddr en0` (macOS) or `ipconfig` (Windows).
+Edit `.env` and set `API_HOST` to your dev machine's **LAN IP** + the gateway port (e.g. `http://192.168.1.41:8080`) — if you're testing on a physical phone, `localhost` won't resolve to your dev machine. Find your LAN IP with `ipconfig getifaddr en0` (macOS) or `ipconfig` (Windows). Unlike the old Expo/Metro setup, changing `.env` requires a native rebuild (Android: re-run `npm run android`, occasionally `cd android && ./gradlew clean` first; iOS: re-run `pod install` then `npm run ios`) — a Metro restart alone won't pick it up.
 
-Build for Android/iOS via [EAS Build](https://docs.expo.dev/build/introduction/) (`eas build`) ahead of Play Store / App Store submission.
+Build release artifacts directly via Xcode (Archive) and `cd android && ./gradlew assembleRelease` / `bundleRelease`, same as any bare React Native app — there is no EAS Build step anymore.
 
 ## Running the full stack locally
 
 1. Bootstrap and start the backend (see [Running the backend](#running-the-backend) above): `./Backend/scripts/dev-up.sh`. Confirm it's up with `docker compose -f Backend/docker-compose.yml -f Backend/docker-compose.dev.yml ps` (all services should show `Up`), or run `./Backend/smoke-test.sh` for an end-to-end check.
-2. Find your machine's LAN IP and put it in `Frontend/.env` as `EXPO_PUBLIC_API_HOST=http://<your-lan-ip>:8080`.
-3. `cd Frontend && npm install && npx expo start`, then open the app in Expo Go, an emulator/simulator, or a dev client.
-4. When done: `./Backend/scripts/dev-down.sh` (backend), `Ctrl+C` (Expo).
+2. Find your machine's LAN IP and put it in `Frontend/.env` as `API_HOST=http://<your-lan-ip>:8080`.
+3. `cd Frontend && npm install && (cd ios && bundle install && bundle exec pod install) && npm run android` (or `npm run ios`).
+4. When done: `./Backend/scripts/dev-down.sh` (backend), `Ctrl+C` (Metro).
 
 ## Environment & secrets
 

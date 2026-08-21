@@ -1,9 +1,7 @@
-import {
-  Feather,
-  Ionicons,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
+import Feather from "react-native-vector-icons/Feather";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { errorCodes, isErrorWithCode, pick } from "@react-native-documents/picker";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -413,15 +411,20 @@ function FilesTab({ projectId }: { projectId: string }) {
   const files = data?.files ?? [];
 
   const handleUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-    if (result.canceled || !result.assets?.[0]) return;
+    let asset;
+    try {
+      [asset] = await pick();
+    } catch (err) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) return;
+      Alert.alert("Upload Failed", getErrorMessage(err));
+      return;
+    }
 
-    const asset = result.assets[0];
     try {
       await uploadFile.mutateAsync({
         uri: asset.uri,
         name: asset.name ?? "file",
-        type: asset.mimeType ?? "application/octet-stream",
+        type: asset.type ?? "application/octet-stream",
       });
     } catch (err) {
       Alert.alert("Upload Failed", getErrorMessage(err));

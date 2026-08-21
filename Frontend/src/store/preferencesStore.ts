@@ -1,5 +1,6 @@
-import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
+
+import * as SecureStore from "../utils/secureStore";
 
 const DARK_MODE_KEY = "csn.darkMode";
 

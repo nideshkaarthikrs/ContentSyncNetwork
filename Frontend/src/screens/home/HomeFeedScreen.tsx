@@ -1,8 +1,6 @@
-import {
-  Feather,
-  Ionicons,
-  MaterialIcons
-} from "@expo/vector-icons";
+import Feather from "react-native-vector-icons/Feather";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import {
   ActivityIndicator,
   ScrollView,
@@ -23,7 +21,7 @@ interface Props {
   navigation: any;
 }
 
-const FEED_ICON: Record<FeedItemType, keyof typeof MaterialIcons.glyphMap> = {
+const FEED_ICON: Record<FeedItemType, string> = {
   TUNE: "music-note",
   VIDEO: "videocam",
   PROJECT: "folder",

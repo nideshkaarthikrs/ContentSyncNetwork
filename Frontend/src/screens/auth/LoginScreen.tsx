@@ -1,8 +1,6 @@
-import {
-  AntDesign,
-  FontAwesome,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
+import AntDesign from "react-native-vector-icons/AntDesign";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useState } from "react";
 import {
   ScrollView,

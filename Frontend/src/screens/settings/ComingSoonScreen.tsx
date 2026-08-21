@@ -1,4 +1,5 @@
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {
   StyleSheet,
   Text,

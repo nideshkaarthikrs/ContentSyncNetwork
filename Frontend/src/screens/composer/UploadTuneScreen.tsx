@@ -19,6 +19,7 @@ import { TuneAnalysis } from "../../api/services/tune.api";
 import SelectListModal from "../../components/common/SelectListModal";
 import { useAnalyzeTune } from "../../hooks/tune/useAnalyzeTune";
 import { useCreateTune } from "../../hooks/tune/useCreateTune";
+import { preflightUpload } from "../../utils/uploadPreflight";
 
 interface Props {
   navigation: any;
@@ -58,13 +59,25 @@ export default function UploadTuneScreen({
       });
     } catch (err) {
       if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) return;
-      throw err;
+      Alert.alert("Selection Failed", getErrorMessage(err));
+      return;
+    }
+
+    const name = asset.name ?? "audio";
+    const preflight = preflightUpload("tune", {
+      name,
+      type: asset.type ?? "audio/mpeg",
+      size: asset.size,
+    });
+    if (!preflight.ok) {
+      setError(preflight.error ?? "Selected file is invalid.");
+      return;
     }
 
     setAudioFile({
       uri: asset.uri,
-      name: asset.name ?? "audio",
-      type: asset.type ?? "audio/mpeg"
+      name,
+      type: preflight.file.type
     });
   };
 

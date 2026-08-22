@@ -23,6 +23,7 @@ import { useTuneLyrics } from "../../hooks/lyrics/useTuneLyrics";
 import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useAnalyzePerformance } from "../../hooks/voice/useAnalyzePerformance";
 import { useUploadPerformance } from "../../hooks/voice/useUploadPerformance";
+import { preflightUpload } from "../../utils/uploadPreflight";
 
 interface Props {
   navigation: any;
@@ -68,13 +69,25 @@ export default function SingerStudioScreen({
       });
     } catch (err) {
       if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) return;
-      throw err;
+      Alert.alert("Selection Failed", getErrorMessage(err));
+      return;
+    }
+
+    const name = asset.name ?? "performance";
+    const preflight = preflightUpload("voice", {
+      name,
+      type: asset.type ?? "audio/mpeg",
+      size: asset.size,
+    });
+    if (!preflight.ok) {
+      setError(preflight.error ?? "Selected file is invalid.");
+      return;
     }
 
     setVoiceFile({
       uri: asset.uri,
-      name: asset.name ?? "performance",
-      type: asset.type ?? "audio/mpeg"
+      name,
+      type: preflight.file.type
     });
   };
 

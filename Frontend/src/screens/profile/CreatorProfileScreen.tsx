@@ -14,10 +14,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
-import { serviceBaseUrl } from "../../config/services";
+import { resolveAssetUrl } from "../../config/services";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUploadPhoto } from "../../hooks/profile/useUploadPhoto";
 import { useAuthStore } from "../../store/authStore";
+import { preflightUpload } from "../../utils/uploadPreflight";
 
 const FALLBACK_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
 
@@ -38,7 +39,7 @@ export default function CreatorProfileScreen({
     (error.response?.data as { errorCode?: string } | undefined)?.errorCode === "CSN-PROFILE-PRIVATE";
 
   const avatarUri = profile?.avatarUrl
-    ? `${serviceBaseUrl("profile")}${profile.avatarUrl}`
+    ? resolveAssetUrl("profile", profile.avatarUrl)
     : FALLBACK_AVATAR;
 
   const handleChangePhoto = async () => {
@@ -56,11 +57,23 @@ export default function CreatorProfileScreen({
 
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
+
+    const name = asset.fileName ?? "photo.jpg";
+    const preflight = preflightUpload("profile", {
+      name,
+      type: asset.type ?? "image/jpeg",
+      size: asset.fileSize,
+    });
+    if (!preflight.ok) {
+      Alert.alert("Upload failed", preflight.error ?? "Selected file is invalid.");
+      return;
+    }
+
     try {
       await uploadPhoto.mutateAsync({
         uri: asset.uri,
-        name: asset.fileName ?? "photo.jpg",
-        type: asset.type ?? "image/jpeg"
+        name,
+        type: preflight.file.type
       });
     } catch (err) {
       Alert.alert("Upload failed", getErrorMessage(err));

@@ -22,7 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { Role } from "../../api/services/auth.api";
 import { ProjectFile } from "../../api/services/project.api";
-import { serviceBaseUrl } from "../../config/services";
+import { resolveAssetUrl } from "../../config/services";
 import { useChatSocket } from "../../hooks/chat/useChatSocket";
 import { useProjectMessages } from "../../hooks/chat/useProjectMessages";
 import { useSendMessage } from "../../hooks/chat/useSendMessage";
@@ -33,6 +33,7 @@ import { useProjectMembers } from "../../hooks/project/useProjectMembers";
 import { useRespondToInvite } from "../../hooks/project/useRespondToInvite";
 import { useUploadProjectFile } from "../../hooks/project/useUploadProjectFile";
 import { useAuthStore } from "../../store/authStore";
+import { preflightUpload } from "../../utils/uploadPreflight";
 
 interface Props {
   navigation: any;
@@ -420,11 +421,22 @@ function FilesTab({ projectId }: { projectId: string }) {
       return;
     }
 
+    const name = asset.name ?? "file";
+    const preflight = preflightUpload("project", {
+      name,
+      type: asset.type ?? "application/octet-stream",
+      size: asset.size,
+    });
+    if (!preflight.ok) {
+      Alert.alert("Upload Failed", preflight.error ?? "Selected file is invalid.");
+      return;
+    }
+
     try {
       await uploadFile.mutateAsync({
         uri: asset.uri,
-        name: asset.name ?? "file",
-        type: asset.type ?? "application/octet-stream",
+        name,
+        type: preflight.file.type,
       });
     } catch (err) {
       Alert.alert("Upload Failed", getErrorMessage(err));
@@ -433,7 +445,7 @@ function FilesTab({ projectId }: { projectId: string }) {
 
   const openFile = async (file: ProjectFile) => {
     try {
-      await Linking.openURL(`${serviceBaseUrl("project")}${file.fileUrl}`);
+      await Linking.openURL(resolveAssetUrl("project", file.fileUrl));
     } catch {
       Alert.alert("Couldn't open file", "No app on this device can open this file type.");
     }

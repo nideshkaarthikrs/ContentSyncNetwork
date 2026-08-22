@@ -24,6 +24,7 @@ import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useCreateVideoProject } from "../../hooks/video/useCreateVideoProject";
 import { useGenerateStoryboard } from "../../hooks/video/useGenerateStoryboard";
 import { useUploadVideo } from "../../hooks/video/useUploadVideo";
+import { preflightUpload } from "../../utils/uploadPreflight";
 
 interface Props {
   navigation: any;
@@ -73,10 +74,22 @@ export default function DirectorStudioScreen({
 
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
+
+    const name = asset.fileName ?? "moodboard.jpg";
+    const preflight = preflightUpload("video", {
+      name,
+      type: asset.type ?? "image/jpeg",
+      size: asset.fileSize,
+    });
+    if (!preflight.ok) {
+      setError(preflight.error ?? "Selected file is invalid.");
+      return;
+    }
+
     setMoodBoard({
       uri: asset.uri,
-      name: asset.fileName ?? "moodboard.jpg",
-      type: asset.type ?? "image/jpeg"
+      name,
+      type: preflight.file.type
     });
   };
 

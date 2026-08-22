@@ -89,18 +89,6 @@ export default function VotingScreen({
           <View style={{ width: 22 }} />
         </View>
 
-        {/* Tune Card */}
-
-        <View style={styles.tuneCard}>
-          <Text style={styles.tuneTitle}>
-            Love Melody
-          </Text>
-
-          <Text style={styles.tuneMeta}>
-            Select the best performance
-          </Text>
-        </View>
-
         {/* Participants */}
 
         {submissions.length === 0 && (
@@ -207,23 +195,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "700"
-  },
-
-  tuneCard: {
-    marginHorizontal: 20,
-    backgroundColor: "#F5F3FF",
-    padding: 18,
-    borderRadius: 12
-  },
-
-  tuneTitle: {
-    fontSize: 18,
-    fontWeight: "700"
-  },
-
-  tuneMeta: {
-    marginTop: 5,
-    color: "#666"
   },
 
   participantCard: {

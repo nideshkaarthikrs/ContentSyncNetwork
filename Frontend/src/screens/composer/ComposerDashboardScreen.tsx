@@ -12,14 +12,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
+import { resolveAssetUrl } from "../../config/services";
 import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useMyTunes } from "../../hooks/tune/useMyTunes";
+import { useMyProjects } from "../../hooks/project/useMyProjects";
+import { useProfile } from "../../hooks/profile/useProfile";
+import { useAuthStore } from "../../store/authStore";
 
 interface Props {
   navigation: any;
 }
+
+const FALLBACK_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
 
 export default function ComposerDashboardScreen({
   navigation
@@ -29,6 +35,14 @@ export default function ComposerDashboardScreen({
   const { data, isLoading, isError, refetch } = useMyTunes(1, 5);
   const tunes = data?.tunes ?? [];
   const deleteTune = useDeleteTune();
+
+  const { data: projectsData } = useMyProjects(1, 5);
+
+  const userId = useAuthStore((state) => state.user?.userId);
+  const { data: profile } = useProfile(userId);
+  const avatarUri = profile?.avatarUrl
+    ? resolveAssetUrl("profile", profile.avatarUrl)
+    : FALLBACK_AVATAR;
 
   const handleDelete = (tuneId: string) => {
     Alert.alert("Delete Tune", "This can't be undone. Delete this tune?", [
@@ -69,8 +83,7 @@ export default function ComposerDashboardScreen({
 
           <Image
             source={{
-              uri:
-                "https://randomuser.me/api/portraits/men/32.jpg"
+              uri: avatarUri
             }}
             style={styles.profile}
           />
@@ -95,27 +108,7 @@ export default function ComposerDashboardScreen({
             </Text>
 
             <Text style={styles.cardValue}>
-              12
-            </Text>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>
-              Total Plays
-            </Text>
-
-            <Text style={styles.cardValue}>
-              45.6K
-            </Text>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>
-              Revenue
-            </Text>
-
-            <Text style={styles.cardValue}>
-              ₹45,320
+              {projectsData?.total ?? "—"}
             </Text>
           </View>
         </View>

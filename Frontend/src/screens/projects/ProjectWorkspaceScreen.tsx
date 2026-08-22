@@ -42,25 +42,6 @@ interface Props {
 
 const INVITABLE_ROLES: Role[] = ["COMPOSER", "LYRICIST", "SINGER", "DIRECTOR"];
 
-// No backend endpoint exists for project tasks — kept as local, unwired placeholder content.
-const tasks = [
-  {
-    id: "1",
-    title: "Finalize Lyrics",
-    status: "Pending"
-  },
-  {
-    id: "2",
-    title: "Record Vocal Track",
-    status: "In Progress"
-  },
-  {
-    id: "3",
-    title: "Storyboard Creation",
-    status: "Completed"
-  }
-];
-
 export default function ProjectWorkspaceScreen({
   navigation,
   route
@@ -196,7 +177,6 @@ function ProjectWorkspaceContent({
       <View style={styles.tabContainer}>
         {[
           "Overview",
-          "Tasks",
           "Files",
           "Chat"
         ].map(tab => (
@@ -225,7 +205,6 @@ function ProjectWorkspaceContent({
       </View>
 
       {activeTab === "Overview" && <OverviewTab projectId={projectId} />}
-      {activeTab === "Tasks" && <TasksTab />}
       {activeTab === "Files" && <FilesTab projectId={projectId} />}
       {activeTab === "Chat" && <ChatTab projectId={projectId} />}
     </SafeAreaView>
@@ -362,44 +341,6 @@ function OverviewTab({ projectId }: { projectId: string }) {
           {inviteCollaborator.isPending ? "Inviting..." : "Send Invite"}
         </Text>
       </TouchableOpacity>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
-  );
-}
-
-function TasksTab() {
-  return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>
-        Project Tasks
-      </Text>
-
-      {tasks.map(task => (
-        <View
-          key={task.id}
-          style={styles.taskCard}
-        >
-          <Text style={styles.taskTitle}>
-            {task.title}
-          </Text>
-
-          <View
-            style={[
-              styles.statusBadge,
-              task.status ===
-                "Completed" &&
-                styles.completedBadge
-            ]}
-          >
-            <Text
-              style={styles.statusText}
-            >
-              {task.status}
-            </Text>
-          </View>
-        </View>
-      ))}
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -753,35 +694,6 @@ const styles = StyleSheet.create({
 
   roleChipTextActive: {
     color: "#FFF"
-  },
-
-  taskCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderColor: "#EEE"
-  },
-
-  taskTitle: {
-    fontWeight: "600"
-  },
-
-  statusBadge: {
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 15
-  },
-
-  completedBadge: {
-    backgroundColor: "#D1FAE5"
-  },
-
-  statusText: {
-    fontSize: 12
   },
 
   actionButton: {

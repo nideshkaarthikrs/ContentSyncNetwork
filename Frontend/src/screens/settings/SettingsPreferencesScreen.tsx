@@ -1,5 +1,6 @@
 import Feather from "react-native-vector-icons/Feather";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,11 +11,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
 import { useLogout } from "../../hooks/auth/useLogout";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
 import { useAuthStore } from "../../store/authStore";
 import { usePreferencesStore } from "../../store/preferencesStore";
+import { useToastStore } from "../../store/toastStore";
 import { Theme } from "../../theme/theme";
 import { useTheme } from "../../theme/useTheme";
 
@@ -22,38 +25,28 @@ interface Props {
   navigation: any;
 }
 
-export default function SettingsPreferencesScreen({
-  navigation
-}: Props) {
-  const theme = useTheme();
-  const styles = getStyles(theme);
-  const logout = useLogout();
-
-  const handleLogout = async () => {
-    try {
-      await logout.mutateAsync();
-    } catch {
-      // useLogout clears the local session even if the server call fails — clearing the
-      // token swaps AppNavigator to the Login group, so no navigation is needed here.
-    }
-  };
-
-  const darkMode = usePreferencesStore((state) => state.darkMode);
-  const setDarkMode = usePreferencesStore((state) => state.setDarkMode);
-
-  const userId = useAuthStore((state) => state.user?.userId);
-  const { data: profile } = useProfile(userId);
-  const updateProfile = useUpdateProfile(userId);
-
-  const notificationsEnabled = profile?.pushNotificationsEnabled ?? true;
-  const publicProfile = profile?.publicProfile ?? true;
-
-  const MenuItem = ({
-    icon,
-    title,
-    screen,
-    params
-  }: any) => (
+// Module-scope (not defined inside the screen component): a component defined inside
+// a render body is a new function identity every render, which React treats as a new
+// component type -- forcing a full remount (and loss of any internal state) on every
+// re-render of the parent.
+function MenuItem({
+  icon,
+  title,
+  screen,
+  params,
+  navigation,
+  styles,
+  theme
+}: {
+  icon: string;
+  title: string;
+  screen?: string;
+  params?: Record<string, unknown>;
+  navigation: any;
+  styles: ReturnType<typeof getStyles>;
+  theme: Theme;
+}) {
+  return (
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() =>
@@ -63,7 +56,7 @@ export default function SettingsPreferencesScreen({
     >
       <View style={styles.menuLeft}>
         <MaterialCommunityIcons
-          name={icon}
+          name={icon as any}
           size={22}
           color={theme.colors.primary}
         />
@@ -80,17 +73,28 @@ export default function SettingsPreferencesScreen({
       />
     </TouchableOpacity>
   );
+}
 
-  const SwitchItem = ({
-    icon,
-    title,
-    value,
-    onChange
-  }: any) => (
+function SwitchItem({
+  icon,
+  title,
+  value,
+  onChange,
+  styles,
+  theme
+}: {
+  icon: string;
+  title: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  styles: ReturnType<typeof getStyles>;
+  theme: Theme;
+}) {
+  return (
     <View style={styles.menuItem}>
       <View style={styles.menuLeft}>
         <MaterialCommunityIcons
-          name={icon}
+          name={icon as any}
           size={22}
           color={theme.colors.primary}
         />
@@ -109,6 +113,70 @@ export default function SettingsPreferencesScreen({
       />
     </View>
   );
+}
+
+export default function SettingsPreferencesScreen({
+  navigation
+}: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+  const logout = useLogout();
+  const showToast = useToastStore((state) => state.show);
+
+  const handleLogout = async () => {
+    try {
+      await logout.mutateAsync();
+    } catch {
+      // useLogout clears the local session even if the server call fails — clearing the
+      // token swaps AppNavigator to the Login group, so no navigation is needed here.
+    }
+  };
+
+  const darkMode = usePreferencesStore((state) => state.darkMode);
+  const setDarkMode = usePreferencesStore((state) => state.setDarkMode);
+
+  const userId = useAuthStore((state) => state.user?.userId);
+  const { data: profile } = useProfile(userId);
+  const updateProfile = useUpdateProfile(userId);
+
+  // Short-lived overrides so the switch flips immediately on tap, instead of waiting
+  // for the mutation to resolve and the profile query to refetch; cleared on success,
+  // rolled back to the pre-tap value on failure.
+  const [pendingNotifications, setPendingNotifications] = useState<boolean | null>(null);
+  const [pendingPublicProfile, setPendingPublicProfile] = useState<boolean | null>(null);
+
+  const notificationsEnabled = pendingNotifications ?? profile?.pushNotificationsEnabled ?? true;
+  const publicProfile = pendingPublicProfile ?? profile?.publicProfile ?? true;
+
+  const handleToggleNotifications = (value: boolean) => {
+    const previous = notificationsEnabled;
+    setPendingNotifications(value);
+    updateProfile.mutate(
+      { pushNotificationsEnabled: value },
+      {
+        onSuccess: () => setPendingNotifications(null),
+        onError: (err) => {
+          setPendingNotifications(previous);
+          showToast(getErrorMessage(err, "Could not update notifications."));
+        },
+      },
+    );
+  };
+
+  const handleTogglePublicProfile = (value: boolean) => {
+    const previous = publicProfile;
+    setPendingPublicProfile(value);
+    updateProfile.mutate(
+      { publicProfile: value },
+      {
+        onSuccess: () => setPendingPublicProfile(null),
+        onError: (err) => {
+          setPendingPublicProfile(previous);
+          showToast(getErrorMessage(err, "Could not update public profile."));
+        },
+      },
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,6 +213,9 @@ export default function SettingsPreferencesScreen({
           icon="account-circle-outline"
           title="Profile"
           screen="CreatorProfile"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
@@ -152,12 +223,18 @@ export default function SettingsPreferencesScreen({
           title="Verification"
           screen="ComingSoon"
           params={{ title: "Verification" }}
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
           icon="lock-outline"
           title="Change Password"
           screen="ChangePassword"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         {/* Preferences */}
@@ -171,20 +248,26 @@ export default function SettingsPreferencesScreen({
           title="Dark Mode"
           value={darkMode}
           onChange={setDarkMode}
+          styles={styles}
+          theme={theme}
         />
 
         <SwitchItem
           icon="bell-outline"
           title="Notifications"
           value={notificationsEnabled}
-          onChange={(value: boolean) => updateProfile.mutate({ pushNotificationsEnabled: value })}
+          onChange={handleToggleNotifications}
+          styles={styles}
+          theme={theme}
         />
 
         <SwitchItem
           icon="eye-outline"
           title="Public Profile"
           value={publicProfile}
-          onChange={(value: boolean) => updateProfile.mutate({ publicProfile: value })}
+          onChange={handleTogglePublicProfile}
+          styles={styles}
+          theme={theme}
         />
 
         {/* Payments */}
@@ -198,6 +281,9 @@ export default function SettingsPreferencesScreen({
           title="Bank Account"
           screen="ComingSoon"
           params={{ title: "Bank Account" }}
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
@@ -205,12 +291,18 @@ export default function SettingsPreferencesScreen({
           title="Payment Methods"
           screen="ComingSoon"
           params={{ title: "Payment Methods" }}
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
           icon="cash-multiple"
           title="Wallet"
           screen="WalletPayments"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         {/* Creator */}
@@ -223,12 +315,18 @@ export default function SettingsPreferencesScreen({
           icon="music-note"
           title="Default Role"
           screen="DefaultRole"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
           icon="chart-line"
           title="Analytics"
           screen="AnalyticsDashboard"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         {/* Support */}
@@ -241,12 +339,18 @@ export default function SettingsPreferencesScreen({
           icon="help-circle-outline"
           title="Help Center"
           screen="HelpCenter"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <MenuItem
           icon="file-document-outline"
           title="Terms & Conditions"
           screen="TermsConditions"
+          navigation={navigation}
+          styles={styles}
+          theme={theme}
         />
 
         <TouchableOpacity

@@ -3,7 +3,6 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -16,6 +15,7 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
 import { useAuthStore } from "../../store/authStore";
+import { useToastStore } from "../../store/toastStore";
 
 interface Props {
   navigation: any;
@@ -34,15 +34,27 @@ export default function DefaultRoleScreen({ navigation }: Props) {
   const userId = useAuthStore((state) => state.user?.userId);
   const { data: profile, isLoading } = useProfile(userId);
   const updateProfile = useUpdateProfile(userId);
-  const [selected, setSelected] = useState<string | null>(profile?.primaryRole ?? null);
+  const showToast = useToastStore((state) => state.show);
 
-  const handleSelect = async (role: string) => {
-    setSelected(role);
-    try {
-      await updateProfile.mutateAsync({ primaryRole: role });
-    } catch (err) {
-      Alert.alert("Error", getErrorMessage(err, "Could not update default role."));
-    }
+  // Selection is derived from query data (not local-only state), so it stays correct
+  // if the profile refetches with a different primaryRole from elsewhere. `optimisticRole`
+  // is a short-lived override for the tap-to-refetch gap and for rolling back on failure.
+  const [optimisticRole, setOptimisticRole] = useState<string | null>(null);
+  const selected = optimisticRole ?? profile?.primaryRole ?? null;
+
+  const handleSelect = (role: string) => {
+    const previous = selected;
+    setOptimisticRole(role);
+    updateProfile.mutate(
+      { primaryRole: role },
+      {
+        onSuccess: () => setOptimisticRole(null),
+        onError: (err) => {
+          setOptimisticRole(previous);
+          showToast(getErrorMessage(err, "Could not update default role."));
+        },
+      },
+    );
   };
 
   return (
@@ -63,7 +75,7 @@ export default function DefaultRoleScreen({ navigation }: Props) {
           keyExtractor={(item) => item}
           contentContainerStyle={{ paddingHorizontal: 20 }}
           renderItem={({ item }) => {
-            const isSelected = (selected ?? profile?.primaryRole) === item;
+            const isSelected = selected === item;
             return (
               <TouchableOpacity style={styles.roleCard} onPress={() => handleSelect(item)}>
                 <View style={styles.roleLeft}>

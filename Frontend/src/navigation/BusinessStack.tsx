@@ -19,13 +19,14 @@ const businessModules = [
     id: '2',
     title: 'Rights',
     icon: 'shield-checkmark-outline',
-    screen: 'RightsDetail',
+    screen: 'RightsMarketplace',
   },
   {
     id: '3',
     title: 'Producer',
     icon: 'briefcase-outline',
-    screen: 'ProducerDashboard',
+    screen: 'ComingSoon',
+    params: { title: 'Producer Dashboard' },
   },
   {
     id: '4',
@@ -70,6 +71,7 @@ type BusinessModule = {
   title: string;
   icon: string;
   screen: string;
+  params?: Record<string, unknown>;
 };
 
 export default function BusinessStack({
@@ -83,7 +85,7 @@ export default function BusinessStack({
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
-        navigation.navigate(item.screen)
+        navigation.navigate(item.screen, item.params)
       }
     >
       <View style={styles.iconContainer}>

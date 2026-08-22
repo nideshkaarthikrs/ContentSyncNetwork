@@ -19,7 +19,8 @@ const creatorModules = [
     id: '2',
     title: 'Discover',
     icon: 'search-outline',
-    screen: 'DiscoverTalent',
+    screen: 'ComingSoon',
+    params: { title: 'Talent Discovery' },
   },
   {
     id: '3',
@@ -70,6 +71,7 @@ type CreatorModule = {
   title: string;
   icon: string;
   screen: string;
+  params?: Record<string, unknown>;
 };
 
 export default function CreatorStack({
@@ -83,7 +85,7 @@ export default function CreatorStack({
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
-        navigation.navigate(item.screen)
+        navigation.navigate(item.screen, item.params)
       }
     >
       <View style={styles.iconContainer}>

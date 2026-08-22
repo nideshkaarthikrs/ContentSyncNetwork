@@ -19,7 +19,8 @@ const homeModules = [
     id: '2',
     title: 'Discover',
     icon: 'compass-outline',
-    screen: 'DiscoverTalent',
+    screen: 'ComingSoon',
+    params: { title: 'Talent Discovery' },
   },
   {
     id: '3',
@@ -70,6 +71,7 @@ type HomeModule = {
   title: string;
   icon: string;
   screen: string;
+  params?: Record<string, unknown>;
 };
 
 export default function HomeStack({
@@ -83,7 +85,7 @@ export default function HomeStack({
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
-        navigation.navigate(item.screen)
+        navigation.navigate(item.screen, item.params)
       }
     >
       <View style={styles.iconContainer}>

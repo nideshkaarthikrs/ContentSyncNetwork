@@ -13,9 +13,6 @@ import SplashScreen from '../screens/auth/SplashScreen';
 import HomeFeedScreen from '../screens/home/HomeFeedScreen';
 import RoleSelectionScreen from '../screens/home/RoleSelectionScreen';
 
-// Talent
-import DiscoverTalentScreen from '../screens/talent/DiscoverTalentScreen';
-
 // Composer
 import ComposerDashboardScreen from '../screens/composer/ComposerDashboardScreen';
 import TuneDetailScreen from '../screens/composer/TuneDetailScreen';
@@ -46,9 +43,6 @@ import ProjectWorkspaceScreen from '../screens/projects/ProjectWorkspaceScreen';
 
 // Profile
 import CreatorProfileScreen from '../screens/profile/CreatorProfileScreen';
-
-// Producer
-import ProducerDashboardScreen from '../screens/producer/ProducerDashboardScreen';
 
 // Revenue
 import RevenueDashboardScreen from '../screens/revenue/RevenueDashboardScreen';
@@ -137,12 +131,6 @@ export default function AppNavigator() {
         component={HomeFeedScreen}
       />
 
-      {/* Talent Discovery */}
-      <Stack.Screen
-        name="DiscoverTalent"
-        component={DiscoverTalentScreen}
-      />
-
       {/* Composer */}
       <Stack.Screen
         name="ComposerDashboard"
@@ -215,12 +203,6 @@ export default function AppNavigator() {
       <Stack.Screen
         name="CreatorProfile"
         component={CreatorProfileScreen}
-      />
-
-      {/* Producer */}
-      <Stack.Screen
-        name="ProducerDashboard"
-        component={ProducerDashboardScreen}
       />
 
       {/* Revenue */}

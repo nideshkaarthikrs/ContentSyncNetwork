@@ -5,11 +5,38 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { generateJson, isGeminiConfigured } from '../shared/gemini.client';
 import { getInternal } from '../shared/internal-http.client';
 import { CreateLyricsDto } from './dto/create-lyrics.dto';
 import { GenerateLyricsDto } from './dto/generate-lyrics.dto';
 import { UpdateLyricsDto } from './dto/update-lyrics.dto';
 import { LyricsRepository } from './lyrics.repository';
+
+export interface GeneratedLyricsVersion {
+  version: string;
+  lyrics: string;
+}
+
+export interface GeneratedLyricsResult {
+  versions: GeneratedLyricsVersion[];
+}
+
+function isGeneratedLyricsResult(value: unknown): value is GeneratedLyricsResult {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const versions = (value as { versions?: unknown }).versions;
+  if (!Array.isArray(versions) || versions.length === 0) {
+    return false;
+  }
+  return versions.every(
+    (item) =>
+      !!item &&
+      typeof item === 'object' &&
+      typeof (item as { version?: unknown }).version === 'string' &&
+      typeof (item as { lyrics?: unknown }).lyrics === 'string',
+  );
+}
 
 function toDisplayId(seq: number): string {
   return 'LYR' + (2000 + seq).toString();
@@ -109,15 +136,38 @@ export class LyricsService {
     };
   }
 
-  generate(_dto: GenerateLyricsDto) {
+  async generate(dto: GenerateLyricsDto) {
+    const cfg = {
+      apiKey: this.config.get<string>('gemini.apiKey'),
+      model: this.config.get<string>('gemini.model'),
+    };
+
+    if (isGeminiConfigured(cfg)) {
+      const prompt =
+        `Write 2 distinct versions of song lyrics in ${dto.language}, on the theme "${dto.theme}". ` +
+        'Respond with strict JSON only, no markdown fences, matching exactly this shape: ' +
+        '{"versions": [{"version": "A", "lyrics": "..."}, {"version": "B", "lyrics": "..."}]}. ' +
+        'Each "lyrics" value must be the full lyrics text for that version, with no extra commentary.';
+
+      const result = await generateJson<GeneratedLyricsResult>(cfg, prompt, isGeneratedLyricsResult);
+      if (result) {
+        return {
+          status: 'SUCCESS',
+          message: 'Lyrics generated',
+          data: { versions: result.versions, source: 'gemini' as const },
+        };
+      }
+    }
+
     return {
       status: 'SUCCESS',
       message: 'Lyrics generated',
       data: {
         versions: [
-          { version: 'A', lyrics: 'Mazhai mazhai kaadhal mazhai...' },
-          { version: 'B', lyrics: 'Nenjil oru poo malarndhadhu...' },
+          { version: 'A', lyrics: '[Sample] Mazhai mazhai kaadhal mazhai...' },
+          { version: 'B', lyrics: '[Sample] Nenjil oru poo malarndhadhu...' },
         ],
+        source: 'sample' as const,
       },
     };
   }

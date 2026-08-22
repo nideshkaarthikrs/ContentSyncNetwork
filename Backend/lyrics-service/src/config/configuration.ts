@@ -42,4 +42,8 @@ export default () => ({
   tuneService: {
     url: process.env.TUNE_SERVICE_URL || 'http://localhost:3003',
   },
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+  },
 });

@@ -39,6 +39,7 @@ export default function LyricsSubmissionScreen({
   const [title, setTitle] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [lyricsSource, setLyricsSource] = useState<"gemini" | "sample" | null>(null);
 
   const createLyrics = useCreateLyrics();
   const generateLyrics = useGenerateLyrics();
@@ -56,6 +57,7 @@ export default function LyricsSubmissionScreen({
       });
       const first = result.versions[0];
       if (first) setLyrics(first.lyrics);
+      setLyricsSource(result.source);
     } catch (err) {
       Alert.alert("AI Assist Failed", getErrorMessage(err));
     }
@@ -170,6 +172,12 @@ export default function LyricsSubmissionScreen({
         <Text style={styles.counter}>
           {lyrics.length}/5000
         </Text>
+
+        {lyricsSource === "sample" && (
+          <Text style={styles.sampleBadge}>
+            AI estimate (sample) — Gemini was unavailable for this generation
+          </Text>
+        )}
 
         {error && (
           <Text style={styles.errorText}>
@@ -296,6 +304,14 @@ const styles = StyleSheet.create({
     marginRight: 25,
     color: "#777",
     marginTop: 5
+  },
+
+  sampleBadge: {
+    marginHorizontal: 20,
+    marginTop: 6,
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontStyle: "italic"
   },
 
   errorText: {

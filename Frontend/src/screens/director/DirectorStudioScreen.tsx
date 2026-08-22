@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
+import { Storyboard } from "../../api/services/video.api";
 import SelectListModal from "../../components/common/SelectListModal";
 import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
@@ -52,6 +53,7 @@ export default function DirectorStudioScreen({
   } = useTunePicker(route?.params?.tuneId, route?.params?.tuneTitle);
   const [moodBoard, setMoodBoard] = useState<RNFile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
 
   const createVideoProject = useCreateVideoProject();
   const uploadVideo = useUploadVideo();
@@ -88,6 +90,7 @@ export default function DirectorStudioScreen({
       return;
     }
     setError(null);
+    setStoryboard(null);
 
     try {
       await createVideoProject.mutateAsync({
@@ -105,7 +108,8 @@ export default function DirectorStudioScreen({
 
       if (useAIStoryboard) {
         try {
-          await generateStoryboard.mutateAsync(selectedTune.tuneId);
+          const result = await generateStoryboard.mutateAsync(selectedTune.tuneId);
+          setStoryboard(result);
         } catch {
           // Storyboard generation is a bonus step; a failure here shouldn't block the submission.
         }
@@ -247,6 +251,25 @@ export default function DirectorStudioScreen({
           />
         </View>
 
+        {storyboard && (
+          <View style={styles.resultCard}>
+            <View style={styles.resultHeaderRow}>
+              <Text style={styles.resultTitle}>AI Storyboard</Text>
+              {storyboard.source !== "gemini" && (
+                <Text style={styles.sampleBadge}>AI estimate</Text>
+              )}
+            </View>
+
+            {storyboard.shots.map((shot) => (
+              <View key={shot.shot} style={styles.shotRow}>
+                <Text style={styles.shotNumber}>Shot {shot.shot}</Text>
+                <Text style={styles.shotDescription}>{shot.description}</Text>
+                <Text style={styles.shotDuration}>{shot.duration}s</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {error && (
           <Text style={styles.errorText}>
             {error}
@@ -386,6 +409,54 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginHorizontal: 20,
     marginTop: 20
+  },
+
+  resultCard: {
+    marginHorizontal: 20,
+    marginTop: 25,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 15,
+    backgroundColor: "#FAFAFA"
+  },
+
+  resultHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10
+  },
+
+  resultTitle: {
+    fontWeight: "700",
+    fontSize: 15
+  },
+
+  sampleBadge: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontStyle: "italic"
+  },
+
+  shotRow: {
+    marginBottom: 10
+  },
+
+  shotNumber: {
+    fontWeight: "600",
+    color: PRIMARY,
+    marginBottom: 2
+  },
+
+  shotDescription: {
+    color: "#333"
+  },
+
+  shotDuration: {
+    color: "#777",
+    fontSize: 12,
+    marginTop: 2
   },
 
   primaryButton: {

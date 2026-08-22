@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
 import { Lyrics } from "../../api/services/lyrics.api";
+import { PerformanceAnalysis } from "../../api/services/voice.api";
 import SelectListModal from "../../components/common/SelectListModal";
 import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
@@ -45,6 +46,7 @@ export default function SingerStudioScreen({
   const [selectedLyrics, setSelectedLyrics] = useState<Lyrics | null>(null);
   const [voiceFile, setVoiceFile] = useState<RNFile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<PerformanceAnalysis | null>(null);
 
   const [aiEnhance, setAiEnhance] =
     useState(true);
@@ -90,6 +92,7 @@ export default function SingerStudioScreen({
       return;
     }
     setError(null);
+    setAnalysis(null);
 
     try {
       const { performanceId } = await uploadPerformance.mutateAsync({
@@ -99,7 +102,8 @@ export default function SingerStudioScreen({
 
       if (aiEnhance) {
         try {
-          await analyzePerformance.mutateAsync(performanceId);
+          const result = await analyzePerformance.mutateAsync(performanceId);
+          setAnalysis(result);
         } catch {
           // Analysis is a bonus step; a failure here shouldn't block the successful submission.
         }
@@ -245,6 +249,24 @@ export default function SingerStudioScreen({
             }}
           />
         </View>
+
+        {analysis && (
+          <View style={styles.resultCard}>
+            <View style={styles.resultHeaderRow}>
+              <Text style={styles.resultTitle}>AI Performance Analysis</Text>
+              {analysis.source !== "gemini" && (
+                <Text style={styles.sampleBadge}>AI estimate</Text>
+              )}
+            </View>
+
+            <View style={styles.analysisGrid}>
+              <Text style={styles.analysisItem}>Pitch: {analysis.pitch}</Text>
+              <Text style={styles.analysisItem}>Clarity: {analysis.clarity}</Text>
+              <Text style={styles.analysisItem}>Rhythm: {analysis.rhythm}</Text>
+              <Text style={styles.analysisItem}>Overall: {analysis.overall}</Text>
+            </View>
+          </View>
+        )}
 
         {error && (
           <Text style={styles.errorText}>
@@ -393,6 +415,46 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginHorizontal: 20,
     marginTop: 20
+  },
+
+  resultCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 15,
+    backgroundColor: "#FAFAFA"
+  },
+
+  resultHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10
+  },
+
+  resultTitle: {
+    fontWeight: "700",
+    fontSize: 15
+  },
+
+  sampleBadge: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontStyle: "italic"
+  },
+
+  analysisGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
+
+  analysisItem: {
+    color: "#333",
+    fontSize: 13,
+    minWidth: "45%"
   },
 
   submitButton: {

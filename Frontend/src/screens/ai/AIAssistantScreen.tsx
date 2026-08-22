@@ -13,6 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getErrorMessage } from "../../api/getErrorMessage";
+import { useAssistantChat } from "../../hooks/ai/useAssistantChat";
+import { useToastStore } from "../../store/toastStore";
+
 interface Props {
   navigation: any;
 }
@@ -21,7 +25,18 @@ interface Message {
   id: string;
   sender: "user" | "ai";
   text: string;
+  source?: "gemini" | "sample";
 }
+
+// Recent-conversation window sent as `history` — enough context for the assistant
+// without over-engineering truncation.
+const HISTORY_WINDOW = 10;
+
+const QUICK_PROMPTS: { label: string; prompt: string }[] = [
+  { label: "Generate Lyrics", prompt: "Help me write lyrics for a song about " },
+  { label: "Tune Analysis", prompt: "What genre, bpm, and mood would suit a tune that " },
+  { label: "Storyboard", prompt: "Suggest a video storyboard for a song about " }
+];
 
 export default function AIAssistantScreen({
   navigation
@@ -39,29 +54,50 @@ export default function AIAssistantScreen({
       }
     ]);
 
+  const chat = useAssistantChat();
+  const showToast = useToastStore(s => s.show);
+
   const sendMessage = () => {
-    if (!message.trim()) return;
+    const trimmed = message.trim();
+    if (!trimmed || chat.isPending) return;
+
+    const history = messages.slice(-HISTORY_WINDOW).map(m => ({
+      role: m.sender === "user" ? "user" : "assistant",
+      content: m.text
+    }));
 
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: "user",
-      text: message
+      text: trimmed
     };
 
-    const aiMsg: Message = {
-      id: `${Date.now()}ai`,
-      sender: "ai",
-      text:
-        "I can help with lyrics, composition, singing suggestions, storyboard ideas and project collaboration."
-    };
-
-    setMessages(prev => [
-      ...prev,
-      userMsg,
-      aiMsg
-    ]);
-
+    setMessages(prev => [...prev, userMsg]);
     setMessage("");
+
+    chat.mutate(
+      { message: trimmed, history },
+      {
+        onSuccess: res => {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `${Date.now()}ai`,
+              sender: "ai",
+              text: res.reply,
+              source: res.source
+            }
+          ]);
+        },
+        onError: err => {
+          showToast(getErrorMessage(err));
+        }
+      }
+    );
+  };
+
+  const fillPrompt = (prompt: string) => {
+    setMessage(prompt);
   };
 
   const renderItem = ({
@@ -87,6 +123,10 @@ export default function AIAssistantScreen({
       >
         {item.text}
       </Text>
+
+      {item.source === "sample" && (
+        <Text style={styles.sampleLabel}>Sample reply (AI not available)</Text>
+      )}
     </View>
   );
 
@@ -139,6 +179,13 @@ export default function AIAssistantScreen({
           contentContainerStyle={{
             padding: 15
           }}
+          ListFooterComponent={
+            chat.isPending ? (
+              <View style={[styles.messageBubble, styles.aiBubble]}>
+                <Text style={styles.messageText}>...</Text>
+              </View>
+            ) : null
+          }
         />
 
         {/* Input */}
@@ -154,6 +201,7 @@ export default function AIAssistantScreen({
           <TouchableOpacity
             style={styles.sendButton}
             onPress={sendMessage}
+            disabled={chat.isPending}
           >
             <Feather
               name="send"
@@ -166,29 +214,17 @@ export default function AIAssistantScreen({
         {/* Quick Actions */}
 
         <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.quickChip}
-          >
-            <Text>
-              Generate Lyrics
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickChip}
-          >
-            <Text>
-              Tune Analysis
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickChip}
-          >
-            <Text>
-              Storyboard
-            </Text>
-          </TouchableOpacity>
+          {QUICK_PROMPTS.map(chip => (
+            <TouchableOpacity
+              key={chip.label}
+              style={styles.quickChip}
+              onPress={() => fillPrompt(chip.prompt)}
+            >
+              <Text>
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -242,6 +278,13 @@ const styles = StyleSheet.create({
 
   messageText: {
     color: "#111"
+  },
+
+  sampleLabel: {
+    marginTop: 4,
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontStyle: "italic"
   },
 
   inputRow: {

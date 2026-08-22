@@ -31,6 +31,8 @@ export interface TuneAnalysis {
   key: string;
   mood: string;
   confidence: number;
+  analysisType: "gemini-audio" | "metadata-estimate";
+  source: "gemini" | "sample";
 }
 
 export const tuneService = {

@@ -37,7 +37,12 @@ export const lyricsService = {
 
   generate: (payload: GenerateLyricsPayload) =>
     lyricsApi
-      .post<CsnEnvelope<{ versions: { version: string; lyrics: string }[] }>>("/ai/lyrics/generate", payload)
+      .post<
+        CsnEnvelope<{
+          versions: { version: string; lyrics: string }[];
+          source: "gemini" | "sample";
+        }>
+      >("/ai/lyrics/generate", payload)
       .then((res) => unwrap(res.data)),
 
   submit: (payload: CreateLyricsPayload) =>

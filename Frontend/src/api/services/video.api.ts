@@ -20,6 +20,7 @@ export interface Video {
 export interface Storyboard {
   songId: string;
   shots: { shot: number; description: string; duration: number }[];
+  source: "gemini" | "sample";
 }
 
 export const videoService = {

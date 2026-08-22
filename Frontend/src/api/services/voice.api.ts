@@ -20,6 +20,7 @@ export interface PerformanceAnalysis {
   clarity: number;
   rhythm: number;
   overall: number;
+  source: "gemini" | "sample";
 }
 
 export const voiceService = {

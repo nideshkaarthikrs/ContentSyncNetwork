@@ -24,12 +24,20 @@ interface AudioPlayerState {
 // file genuinely no longer existing server-side (retrying is pointless).
 // react-native-video doesn't surface the underlying HTTP status, so probe it
 // directly; inconclusive results (timeout, non-404 error) are treated as retryable.
-async function classifyPlaybackFailure(url: string): Promise<"error" | "unavailable"> {
+// Exported (not just used internally) so it's unit-testable without needing to
+// trigger real playback.
+export async function classifyPlaybackFailure(url: string): Promise<"error" | "unavailable"> {
+  // AbortSignal.timeout() isn't available in the RN JS runtime -- build the same
+  // behavior manually with AbortController + setTimeout.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    const response = await fetch(url, { method: "HEAD", signal: controller.signal });
     return response.status === 404 ? "unavailable" : "error";
   } catch {
     return "error";
+  } finally {
+    clearTimeout(timer);
   }
 }
 

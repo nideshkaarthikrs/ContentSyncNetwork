@@ -24,9 +24,15 @@ export function refreshOnce(): Promise<string> {
 }
 
 function createServiceClient(service: ServiceName): AxiosInstance {
-  const instance = axios.create({ baseURL: serviceBaseUrl(service) });
+  // baseURL is NOT set here: serviceBaseUrl()/apiOrigin() throws when API_HOST is
+  // misconfigured, and 13 of these clients are created eagerly at module import time.
+  // Resolving it per-request (below) means a misconfiguration surfaces as a normal
+  // rejected request the first time a screen calls the API, not a boot-time crash.
+  const instance = axios.create();
 
   instance.interceptors.request.use((config) => {
+    config.baseURL = serviceBaseUrl(service);
+
     const { token } = useAuthStore.getState();
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);

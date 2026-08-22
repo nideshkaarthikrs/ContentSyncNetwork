@@ -1,9 +1,39 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { generateJson, isGeminiConfigured } from '../shared/gemini.client';
 import { postInternal } from '../shared/internal-http.client';
 import { CreateVideoProjectDto } from './dto/create-video-project.dto';
 import { GenerateStoryboardDto } from './dto/generate-storyboard.dto';
 import { VideoRepository } from './video.repository';
+
+export interface GeneratedStoryboardShot {
+  shot: number;
+  description: string;
+  duration: number;
+}
+
+export interface GeneratedStoryboardResult {
+  songId: string;
+  shots: GeneratedStoryboardShot[];
+}
+
+function isGeneratedStoryboardResult(value: unknown): value is GeneratedStoryboardResult {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const shots = (value as { shots?: unknown }).shots;
+  if (!Array.isArray(shots) || shots.length === 0) {
+    return false;
+  }
+  return shots.every(
+    (item) =>
+      !!item &&
+      typeof item === 'object' &&
+      typeof (item as { shot?: unknown }).shot === 'number' &&
+      typeof (item as { description?: unknown }).description === 'string' &&
+      typeof (item as { duration?: unknown }).duration === 'number',
+  );
+}
 
 function toVideoProjectDisplayId(seq: number): string {
   return 'VPR' + (4000 + seq).toString();
@@ -100,19 +130,42 @@ export class VideoService {
     };
   }
 
-  generateStoryboard(dto: GenerateStoryboardDto) {
+  async generateStoryboard(dto: GenerateStoryboardDto) {
+    const cfg = {
+      apiKey: this.config.get<string>('gemini.apiKey'),
+      model: this.config.get<string>('gemini.model'),
+    };
+
+    if (isGeminiConfigured(cfg)) {
+      const prompt =
+        `Create a music video storyboard with about 5 shots for the song with id "${dto.songId}". ` +
+        'Respond with strict JSON only, no markdown fences, matching exactly this shape: ' +
+        '{"songId": "...", "shots": [{"shot": 1, "description": "...", "duration": 4}]}. ' +
+        'Each "description" should be a short, vivid description of the shot, and "duration" is the shot length in seconds.';
+
+      const result = await generateJson<GeneratedStoryboardResult>(cfg, prompt, isGeneratedStoryboardResult);
+      if (result) {
+        return {
+          status: 'SUCCESS',
+          message: 'Storyboard generated',
+          data: { songId: dto.songId, shots: result.shots, source: 'gemini' as const },
+        };
+      }
+    }
+
     return {
       status: 'SUCCESS',
       message: 'Storyboard generated',
       data: {
         songId: dto.songId,
         shots: [
-          { shot: 1, description: 'Opening wide shot of landscape', duration: 4 },
-          { shot: 2, description: 'Close-up of singer performing', duration: 3 },
-          { shot: 3, description: 'Montage of emotional moments', duration: 5 },
-          { shot: 4, description: 'Group ensemble scene', duration: 4 },
-          { shot: 5, description: 'Closing aerial shot', duration: 3 },
+          { shot: 1, description: '[Sample] Opening wide shot of landscape', duration: 4 },
+          { shot: 2, description: '[Sample] Close-up of singer performing', duration: 3 },
+          { shot: 3, description: '[Sample] Montage of emotional moments', duration: 5 },
+          { shot: 4, description: '[Sample] Group ensemble scene', duration: 4 },
+          { shot: 5, description: '[Sample] Closing aerial shot', duration: 3 },
         ],
+        source: 'sample' as const,
       },
     };
   }

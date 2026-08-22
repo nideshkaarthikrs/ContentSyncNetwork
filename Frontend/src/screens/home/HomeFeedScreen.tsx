@@ -1,4 +1,3 @@
-import Feather from "react-native-vector-icons/Feather";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import {
@@ -6,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -75,15 +73,11 @@ export default function HomeFeedScreen({
           <Text style={styles.logo}>CSN</Text>
 
           <View style={styles.headerIcons}>
-            <TouchableOpacity>
-              <Feather
-                name="search"
-                size={20}
-                color={theme.colors.text}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("NotificationsCenter")
+              }
+            >
               <Ionicons
                 name="notifications-outline"
                 size={22}
@@ -91,21 +85,6 @@ export default function HomeFeedScreen({
               />
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Search */}
-
-        <View style={styles.searchBox}>
-          <Feather
-            name="search"
-            size={18}
-            color={theme.colors.textMuted}
-          />
-
-          <TextInput
-            placeholder="Search for tunes, lyrics, people..."
-            style={styles.searchInput}
-          />
         </View>
 
         {/* Latest From Network */}
@@ -176,26 +155,7 @@ const getStyles = (theme: Theme) => StyleSheet.create({
   },
 
   headerIcons: {
-    flexDirection: "row",
-    width: 70,
-    justifyContent: "space-between"
-  },
-
-  searchBox: {
-    margin: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    height: 50
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    color: theme.colors.text
+    flexDirection: "row"
   },
 
   sectionHeader: {

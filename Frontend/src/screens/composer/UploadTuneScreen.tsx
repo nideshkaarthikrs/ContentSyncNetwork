@@ -37,7 +37,6 @@ export default function UploadTuneScreen({
   const [mood, setMood] = useState("");
   const [language, setLanguage] = useState("");
   const [bpm, setBpm] = useState("");
-  const [key, setKey] = useState("");
   const [aiAnalyze, setAiAnalyze] =
     useState(true);
   const [audioFile, setAudioFile] = useState<RNFile | null>(null);
@@ -213,16 +212,6 @@ export default function UploadTuneScreen({
           keyboardType="numeric"
           value={bpm}
           onChangeText={setBpm}
-        />
-
-        <Text style={styles.label}>
-          Key (Optional)
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. C Major"
-          value={key}
-          onChangeText={setKey}
         />
 
         <Text style={styles.label}>

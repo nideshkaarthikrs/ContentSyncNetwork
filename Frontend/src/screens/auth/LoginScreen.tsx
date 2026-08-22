@@ -1,5 +1,3 @@
-import AntDesign from "react-native-vector-icons/AntDesign";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useState } from "react";
 import {
@@ -101,12 +99,6 @@ export default function LoginScreen({
           />
         </View>
 
-        <TouchableOpacity>
-          <Text style={styles.forgot}>
-            Forgot Password?
-          </Text>
-        </TouchableOpacity>
-
         {error && (
           <Text style={styles.errorText}>
             {error}
@@ -122,36 +114,6 @@ export default function LoginScreen({
             {login.isPending ? "Logging in..." : "Login"}
           </Text>
         </TouchableOpacity>
-
-        <Text style={styles.orText}>
-          or continue with
-        </Text>
-
-        <View style={styles.socialRow}>
-          <TouchableOpacity style={styles.socialBtn}>
-            <AntDesign
-              name="google"
-              size={22}
-              color="#EA4335"
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.socialBtn}>
-            <AntDesign
-              name="apple"
-              size={22}
-              color="#000"
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.socialBtn}>
-            <FontAwesome
-              name="facebook"
-              size={22}
-              color="#1877F2"
-            />
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -214,12 +176,6 @@ const getStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.text
   },
 
-  forgot: {
-    alignSelf: "flex-end",
-    color: theme.colors.textMuted,
-    marginBottom: 25
-  },
-
   errorText: {
     color: theme.colors.danger,
     textAlign: "center",
@@ -238,28 +194,6 @@ const getStyles = (theme: Theme) => StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 16
-  },
-
-  orText: {
-    textAlign: "center",
-    marginVertical: 25,
-    color: theme.colors.textMuted
-  },
-
-  socialRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 15
-  },
-
-  socialBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center"
   },
 
   footer: {

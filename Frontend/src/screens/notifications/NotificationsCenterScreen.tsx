@@ -66,6 +66,10 @@ export default function NotificationsCenterScreen({
         }
         if (item.type === "INVITE" && item.sourceId) {
           navigation.navigate("ProjectWorkspace", { projectId: item.sourceId });
+        } else if (item.type === "MARKETPLACE_SALE") {
+          navigation.navigate("RightsMarketplace");
+        } else if (item.type === "VOTE_RECEIVED") {
+          navigation.navigate("Voting");
         }
       }}
     >

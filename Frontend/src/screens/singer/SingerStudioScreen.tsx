@@ -52,9 +52,6 @@ export default function SingerStudioScreen({
   const [aiEnhance, setAiEnhance] =
     useState(true);
 
-  const [autoTune, setAutoTune] =
-    useState(true);
-
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
 
   const { data: tuneLyrics } = useTuneLyrics(selectedTune?.tuneId);
@@ -227,7 +224,7 @@ export default function SingerStudioScreen({
         <View style={styles.switchRow}>
           <View>
             <Text style={styles.switchTitle}>
-              AI Enhance
+              Analyze performance
             </Text>
 
             <Text style={styles.switchDesc}>
@@ -239,24 +236,6 @@ export default function SingerStudioScreen({
           <Switch
             value={aiEnhance}
             onValueChange={setAiEnhance}
-            trackColor={{
-              true: "#7C3AED"
-            }}
-          />
-        </View>
-
-        {/* Auto Tune */}
-
-        <View style={styles.switchRow}>
-          <View>
-            <Text style={styles.switchTitle}>
-              Auto Pitch Correction
-            </Text>
-          </View>
-
-          <Switch
-            value={autoTune}
-            onValueChange={setAutoTune}
             trackColor={{
               true: "#7C3AED"
             }}

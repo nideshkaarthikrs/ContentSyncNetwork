@@ -40,9 +40,6 @@ export default function DirectorStudioScreen({
   const [useAIStoryboard, setUseAIStoryboard] =
     useState(true);
 
-  const [allowCollaboration, setAllowCollaboration] =
-    useState(true);
-
   const [concept, setConcept] = useState("");
   const {
     selectedTune,
@@ -238,28 +235,6 @@ export default function DirectorStudioScreen({
           <Switch
             value={useAIStoryboard}
             onValueChange={setUseAIStoryboard}
-            trackColor={{ true: "#7C3AED" }}
-          />
-        </View>
-
-        {/* Collaboration */}
-
-        <View style={styles.switchRow}>
-          <View>
-            <Text style={styles.switchTitle}>
-              Open For Collaboration
-            </Text>
-
-            <Text style={styles.switchDesc}>
-              Allow other directors to join
-            </Text>
-          </View>
-
-          <Switch
-            value={allowCollaboration}
-            onValueChange={
-              setAllowCollaboration
-            }
             trackColor={{ true: "#7C3AED" }}
           />
         </View>

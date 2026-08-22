@@ -16,6 +16,7 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { useLogin } from "../../hooks/auth/useLogin";
 import { Theme } from "../../theme/theme";
 import { useTheme } from "../../theme/useTheme";
+import { isEmailFormat, isMobileFormat } from "../../utils/validators";
 
 interface Props {
   navigation: any;
@@ -32,9 +33,17 @@ export default function LoginScreen({
   const login = useLogin();
 
   const handleLogin = async () => {
+    const trimmedIdentifier = identifier.trim();
+    // The backend already accepts either an email or a mobile number for this field
+    // (see the "Email or Mobile" placeholder below) -- validate the format matches
+    // one of the two before submitting, don't restrict the UI to email-only.
+    if (!isEmailFormat(trimmedIdentifier) && !isMobileFormat(trimmedIdentifier)) {
+      setError("Enter a valid email address or mobile number.");
+      return;
+    }
     setError(null);
     try {
-      await login.mutateAsync({ email: identifier.trim().toLowerCase(), password });
+      await login.mutateAsync({ email: trimmedIdentifier.toLowerCase(), password });
       // No navigation here: setting the session token swaps AppNavigator's
       // auth-gated groups automatically.
     } catch (err) {

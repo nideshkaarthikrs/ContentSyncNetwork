@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { isEmailFormat, isMobileFormat } from "../../utils/validators";
+
 interface Props {
   navigation: any;
 }
@@ -26,6 +28,14 @@ export default function SignUpScreen({
   const handleNext = () => {
     if (!fullName || !email || !mobile || !password) {
       setError("Please fill in all fields.");
+      return;
+    }
+    if (!isEmailFormat(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!isMobileFormat(mobile)) {
+      setError("Please enter a valid mobile number.");
       return;
     }
     if (password.length < 6) {

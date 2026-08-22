@@ -93,15 +93,37 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Real release signing, sourced from Gradle properties (never committed).
+            // Supply these via ~/.gradle/gradle.properties (user machine-local) or
+            // -P flags on the command line — see README.md "Generating a release keystore".
+            if (project.hasProperty('CSN_UPLOAD_STORE_FILE') &&
+                project.hasProperty('CSN_UPLOAD_STORE_PASSWORD') &&
+                project.hasProperty('CSN_UPLOAD_KEY_ALIAS') &&
+                project.hasProperty('CSN_UPLOAD_KEY_PASSWORD')) {
+                storeFile file(project.property('CSN_UPLOAD_STORE_FILE'))
+                storePassword project.property('CSN_UPLOAD_STORE_PASSWORD')
+                keyAlias project.property('CSN_UPLOAD_KEY_ALIAS')
+                keyPassword project.property('CSN_UPLOAD_KEY_PASSWORD')
+            } else {
+                logger.warn('')
+                logger.warn('⚠️ ⚠️ ⚠️  WARNING: CSN_UPLOAD_STORE_FILE / CSN_UPLOAD_STORE_PASSWORD / CSN_UPLOAD_KEY_ALIAS / CSN_UPLOAD_KEY_PASSWORD are not set.')
+                logger.warn('⚠️  Falling back to the DEBUG keystore for this release build — the resulting APK/AAB is NOT suitable for distribution.')
+                logger.warn('⚠️  See Frontend/README.md > "Generating a release keystore" to set up a real release signing key.')
+                logger.warn('')
+                storeFile file('debug.keystore')
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

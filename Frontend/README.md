@@ -46,3 +46,42 @@ There's no config-plugin layer (no `app.json` managed config). To add or change 
 - **iOS**: open `ios/CSN.xcworkspace` in Xcode and use Product → Archive.
 
 There is no EAS Build step — this is a standard bare React Native release process.
+
+### Generating a release keystore
+
+Android release builds are signed via Gradle properties, not a hardcoded
+keystore. Generate your own upload keystore once with:
+
+```
+keytool -genkeypair -v -keystore my-upload-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Store the resulting `.keystore` file **outside the repo** (e.g. in your home
+directory) — never inside `android/app/` or anywhere under version control.
+
+Then set these four properties, either in `~/.gradle/gradle.properties`
+(create the file if it doesn't exist) or as `-P` flags on the `gradlew`
+command line:
+
+- `CSN_UPLOAD_STORE_FILE` — absolute path to your `.keystore` file
+- `CSN_UPLOAD_STORE_PASSWORD` — the keystore password
+- `CSN_UPLOAD_KEY_ALIAS` — the key alias you chose above
+- `CSN_UPLOAD_KEY_PASSWORD` — the key password
+
+Example `~/.gradle/gradle.properties` entry:
+
+```
+CSN_UPLOAD_STORE_FILE=/Users/you/keys/my-upload-key.keystore
+CSN_UPLOAD_STORE_PASSWORD=********
+CSN_UPLOAD_KEY_ALIAS=my-key-alias
+CSN_UPLOAD_KEY_PASSWORD=********
+```
+
+If these properties are not set, `./gradlew assembleRelease` still works —
+it falls back to signing with the debug keystore and prints a loud warning.
+That fallback build is fine for local testing but is **not** a distributable
+release artifact.
+
+**Never commit your keystore file or its passwords.** Both `*.keystore` and
+`keystore.properties` are gitignored; keep the properties above only in your
+machine-local `~/.gradle/gradle.properties`, never in this repo.

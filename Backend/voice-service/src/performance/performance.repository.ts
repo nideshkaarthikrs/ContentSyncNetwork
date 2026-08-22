@@ -37,7 +37,12 @@ export class PerformanceRepository {
 
   async updateScores(
     id: string,
-    scores: { pitchScore: number; clarityScore: number; rhythmScore: number; overallScore: number },
+    scores: {
+      pitchScore: number | null;
+      clarityScore: number | null;
+      rhythmScore: number | null;
+      overallScore: number | null;
+    },
   ) {
     return this.prisma.performance.update({
       where: { id },

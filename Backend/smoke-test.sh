@@ -106,11 +106,13 @@ TUNE_ID=$(jq -r '.data.tuneId' "$TMP_DIR/tune.json")
 MY_TUNES=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/my" -H "$AUTH")
 check "GET /tunes/my" 200 "$MY_TUNES"
 
-GET_TUNE=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/$TUNE_ID")
+GET_TUNE=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/$TUNE_ID" -H "$AUTH")
 check "GET /tunes/:tuneId" 200 "$GET_TUNE"
 
-ANALYZE_TUNE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/tune/tunes/$TUNE_ID/analyze" -H "$AUTH")
+ANALYZE_TUNE=$(curl -s -o "$TMP_DIR/analyze_tune.json" -w "%{http_code}" -X POST "$HOST/tune/tunes/$TUNE_ID/analyze" -H "$AUTH")
 check "POST /tunes/:tuneId/analyze" 200 "$ANALYZE_TUNE"
+ANALYZE_TUNE_SOURCE_VALID=$(jq -r '.data.source == "gemini" or .data.source == "sample"' "$TMP_DIR/analyze_tune.json")
+check "POST /tunes/:tuneId/analyze includes a valid source field" "true" "$ANALYZE_TUNE_SOURCE_VALID"
 
 echo "== lyrics-service =="
 
@@ -120,16 +122,28 @@ CREATE_LYRICS=$(curl -s -o "$TMP_DIR/lyrics.json" -w "%{http_code}" -X POST "$HO
 check "POST /lyrics" 201 "$CREATE_LYRICS"
 LYRICS_ID=$(jq -r '.data.lyricsId' "$TMP_DIR/lyrics.json")
 
-LIST_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/tunes/$TUNE_ID/lyrics")
+LIST_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/tunes/$TUNE_ID/lyrics" -H "$AUTH")
 check "GET /tunes/:tuneId/lyrics" 200 "$LIST_LYRICS"
+
+GET_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/lyrics/$LYRICS_ID" -H "$AUTH")
+check "GET /lyrics/:lyricsId" 200 "$GET_LYRICS"
 
 APPROVE_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/lyrics/lyrics/$LYRICS_ID/approve" -H "$AUTH")
 check "POST /lyrics/:lyricsId/approve" 200 "$APPROVE_LYRICS"
 
-GENERATE_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/lyrics/ai/lyrics/generate" \
+GENERATE_LYRICS=$(curl -s -o "$TMP_DIR/generate_lyrics.json" -w "%{http_code}" -X POST "$HOST/lyrics/ai/lyrics/generate" \
   -H "$AUTH" -H "Content-Type: application/json" \
   -d "{\"tuneId\":\"$TUNE_ID\",\"language\":\"English\",\"theme\":\"love\"}")
 check "POST /ai/lyrics/generate" 200 "$GENERATE_LYRICS"
+GENERATE_LYRICS_SOURCE_VALID=$(jq -r '.data.source == "gemini" or .data.source == "sample"' "$TMP_DIR/generate_lyrics.json")
+check "POST /ai/lyrics/generate includes a valid source field" "true" "$GENERATE_LYRICS_SOURCE_VALID"
+
+ASSISTANT_CHAT=$(curl -s -o "$TMP_DIR/assistant.json" -w "%{http_code}" -X POST "$HOST/lyrics/ai/assistant/chat" \
+  -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{"message":"Suggest a theme for an upbeat pop song"}')
+check "POST /ai/assistant/chat" 200 "$ASSISTANT_CHAT"
+ASSISTANT_SOURCE_VALID=$(jq -r '.data.source == "gemini" or .data.source == "sample"' "$TMP_DIR/assistant.json")
+check "POST /ai/assistant/chat includes a valid source field" "true" "$ASSISTANT_SOURCE_VALID"
 
 echo "== voice-service =="
 
@@ -141,8 +155,10 @@ PERFORMANCE_ID=$(jq -r '.data.performanceId' "$TMP_DIR/perf.json")
 MY_PERF=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/voice/performances/my" -H "$AUTH")
 check "GET /performances/my" 200 "$MY_PERF"
 
-ANALYZE_PERF=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/voice/performances/$PERFORMANCE_ID/analyze" -H "$AUTH")
+ANALYZE_PERF=$(curl -s -o "$TMP_DIR/analyze_perf.json" -w "%{http_code}" -X POST "$HOST/voice/performances/$PERFORMANCE_ID/analyze" -H "$AUTH")
 check "POST /performances/:performanceId/analyze" 200 "$ANALYZE_PERF"
+ANALYZE_PERF_SOURCE_VALID=$(jq -r '.data.source == "gemini" or .data.source == "sample"' "$TMP_DIR/analyze_perf.json")
+check "POST /performances/:performanceId/analyze includes a valid source field" "true" "$ANALYZE_PERF_SOURCE_VALID"
 
 echo "== video-service =="
 
@@ -160,9 +176,11 @@ VIDEO_ID=$(jq -r '.data.videoId' "$TMP_DIR/video.json")
 GET_VIDEO=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/video/videos/$VIDEO_ID" -H "$AUTH")
 check "GET /videos/:videoId" 200 "$GET_VIDEO"
 
-STORYBOARD=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/video/ai/storyboards" \
+STORYBOARD=$(curl -s -o "$TMP_DIR/storyboard.json" -w "%{http_code}" -X POST "$HOST/video/ai/storyboards" \
   -H "$AUTH" -H "Content-Type: application/json" -d "{\"songId\":\"$TUNE_ID\"}")
 check "POST /ai/storyboards" 200 "$STORYBOARD"
+STORYBOARD_SOURCE_VALID=$(jq -r '.data.source == "gemini" or .data.source == "sample"' "$TMP_DIR/storyboard.json")
+check "POST /ai/storyboards includes a valid source field" "true" "$STORYBOARD_SOURCE_VALID"
 
 echo "== project-service =="
 
@@ -193,8 +211,14 @@ SEND_MSG=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/chat/projects/$
   -H "$AUTH" -H "Content-Type: application/json" -d '{"message":"Hello from smoke test"}')
 check "POST /projects/:projectId/messages" 201 "$SEND_MSG"
 
-MSG_HISTORY=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/chat/projects/$PROJECT_ID/messages" -H "$AUTH")
+SEND_MSG2=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/chat/projects/$PROJECT_ID/messages" \
+  -H "$AUTH" -H "Content-Type: application/json" -d '{"message":"Second smoke message"}')
+check "POST /projects/:projectId/messages (second message)" 201 "$SEND_MSG2"
+
+MSG_HISTORY=$(curl -s -o "$TMP_DIR/messages.json" -w "%{http_code}" "$HOST/chat/projects/$PROJECT_ID/messages" -H "$AUTH")
 check "GET /projects/:projectId/messages" 200 "$MSG_HISTORY"
+LATEST_MESSAGE_FIRST=$(jq -r '.data.messages[0].message' "$TMP_DIR/messages.json")
+check "GET /projects/:projectId/messages returns newest first (desc order)" "Second smoke message" "$LATEST_MESSAGE_FIRST"
 
 echo "== voting-service =="
 
@@ -231,18 +255,36 @@ CREATE_LISTING=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/ma
   -d "{\"assetId\":\"$TUNE_ID\",\"assetType\":\"TUNE\",\"licenseType\":\"NON_EXCLUSIVE\",\"price\":500}")
 check "POST /marketplace/rights" 201 "$CREATE_LISTING"
 
-LISTINGS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/rights/marketplace/rights" -H "$AUTH")
+LISTINGS=$(curl -s -o "$TMP_DIR/listings.json" -w "%{http_code}" "$HOST/rights/marketplace/rights" -H "$AUTH")
 check "GET /marketplace/rights" 200 "$LISTINGS"
+LISTING_VISIBLE=$(jq -r --arg tid "$TUNE_ID" '.data.data | any(.assetId == $tid)' "$TMP_DIR/listings.json")
+check "GET /marketplace/rights shows the newly-created AVAILABLE listing" "true" "$LISTING_VISIBLE"
 
-PURCHASE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/marketplace/purchase" \
+# P0.3 made purchases actually debit the buyer (amount > available balance ->
+# 400 CSN-RIGHTS-009), where available balance only ever grows from being a
+# seller in a completed sale or a ROYALTY row (nothing generates ROYALTY rows
+# in this codebase). A fresh account -- like RECIPIENT here -- always starts
+# at $0 with no funding mechanism, so this $500 purchase must correctly fail.
+PURCHASE=$(curl -s -o "$TMP_DIR/purchase.json" -w "%{http_code}" -X POST "$HOST/rights/marketplace/purchase" \
   -H "$RECIPIENT_AUTH" -H "Content-Type: application/json" \
   -d "{\"assetId\":\"$TUNE_ID\",\"licenseType\":\"NON_EXCLUSIVE\"}")
-check "POST /marketplace/purchase" 201 "$PURCHASE"
+check "POST /marketplace/purchase with insufficient balance" 400 "$PURCHASE"
+PURCHASE_ERROR_CODE=$(jq -r '.errorCode' "$TMP_DIR/purchase.json")
+check "POST /marketplace/purchase insufficient-balance errorCode" "CSN-RIGHTS-009" "$PURCHASE_ERROR_CODE"
 
 MY_LISTINGS=$(curl -s -o "$TMP_DIR/my_listings.json" -w "%{http_code}" "$HOST/rights/marketplace/rights/my" -H "$AUTH")
 check "GET /marketplace/rights/my" 200 "$MY_LISTINGS"
 SOLD_COUNT=$(jq -r '.data.soldCount' "$TMP_DIR/my_listings.json")
-check "GET /marketplace/rights/my soldCount reflects the purchase" "1" "$SOLD_COUNT"
+check "GET /marketplace/rights/my soldCount is 0 after a compensated (failed) purchase" "0" "$SOLD_COUNT"
+
+# Confirms the compensating revert actually put the listing back to AVAILABLE
+# rather than leaving it in limbo. (The other direction of this filter -- a
+# genuinely SOLD listing disappearing from browse -- can't be exercised here
+# for the same funding-bootstrap reason; it's covered directly by Task 22's
+# rights.repository.spec.ts, which tests findListings' AVAILABLE-only where.)
+LISTINGS_AFTER=$(curl -s -o "$TMP_DIR/listings_after.json" -w "%{http_code}" "$HOST/rights/marketplace/rights" -H "$AUTH")
+LISTING_STILL_AVAILABLE=$(jq -r --arg tid "$TUNE_ID" '.data.data | any(.assetId == $tid)' "$TMP_DIR/listings_after.json")
+check "GET /marketplace/rights still shows the listing after compensated purchase" "true" "$LISTING_STILL_AVAILABLE"
 
 DRM_TOKEN=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/rights/drm/token" \
   -H "$AUTH" -H "Content-Type: application/json" -d "{\"assetId\":\"$TUNE_ID\"}")
@@ -273,12 +315,8 @@ check "POST /payments/webhook (with internal secret)" 200 "$WEBHOOK"
 
 DASHBOARD=$(curl -s -o "$TMP_DIR/dashboard.json" -w "%{http_code}" "$HOST/payment/revenues/dashboard" -H "$AUTH")
 check "GET /revenues/dashboard" 200 "$DASHBOARD"
-HAS_GROWTH_FIELD=$(jq -r 'has("data") and (.data | has("growthPercent") and has("revenueBreakdown"))' "$TMP_DIR/dashboard.json")
-check "GET /revenues/dashboard includes growthPercent/revenueBreakdown" "true" "$HAS_GROWTH_FIELD"
-
-WITHDRAW=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
-  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":100,"bankAccountId":"ACC123"}')
-check "POST /revenues/withdraw" 201 "$WITHDRAW"
+HAS_GROWTH_FIELD=$(jq -r 'has("data") and (.data | has("growthPercent") and has("revenueBreakdown") and has("availableBalance") and has("subscriptionSpend"))' "$TMP_DIR/dashboard.json")
+check "GET /revenues/dashboard includes growthPercent/revenueBreakdown/availableBalance" "true" "$HAS_GROWTH_FIELD"
 
 echo "== negative assertions (authorization & races) =="
 
@@ -294,8 +332,23 @@ NEG_WEBHOOK=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/paym
   -H "Content-Type: application/json" -d '{"eventType":"payment.success","payload":{}}')
 check "POST /payments/webhook without internal secret" 401 "$NEG_WEBHOOK"
 
+# GET /tunes/:tuneId, GET /tunes/:tuneId/lyrics, and GET /lyrics/:lyricsId all
+# carry @UseGuards(JwtAuthGuard) now (P0.2) -- proof the guard actually rejects
+# an unauthenticated request, not just that the positive-path calls still pass.
+NEG_GET_TUNE_NOAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/$TUNE_ID")
+check "GET /tunes/:tuneId without auth" 401 "$NEG_GET_TUNE_NOAUTH"
+
+NEG_LIST_LYRICS_NOAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/tunes/$TUNE_ID/lyrics")
+check "GET /tunes/:tuneId/lyrics without auth" 401 "$NEG_LIST_LYRICS_NOAUTH"
+
+NEG_GET_LYRICS_NOAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/lyrics/$LYRICS_ID")
+check "GET /lyrics/:lyricsId without auth" 401 "$NEG_GET_LYRICS_NOAUTH"
+
+# nginx blocks every ^/[a-z]+/internal(/|$) path with a hard 404 before it ever
+# reaches InternalAuthGuard -- the request never gets far enough to be
+# "unauthorized," it's unreachable at the gateway.
 NEG_INTERNAL_OWNER=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/internal/tunes/$TUNE_ID/owner")
-check "GET /internal/tunes/:tuneId/owner without internal secret" 401 "$NEG_INTERNAL_OWNER"
+check "GET /internal/tunes/:tuneId/owner is blocked at the gateway" 404 "$NEG_INTERNAL_OWNER"
 
 # Listing an asset you don't own must be refused (TUNE and VIDEO both verified
 # against the owning service).
@@ -350,22 +403,37 @@ wait
 REFRESH_RACE_CODES=$({ cat "$TMP_DIR/refresh_race_1"; echo; cat "$TMP_DIR/refresh_race_2"; echo; } | sort | paste -sd, -)
 check "POST /auth/refresh-token same token twice (one wins, one 401)" "200,401" "$REFRESH_RACE_CODES"
 
-# Withdrawal race: the owner earned 500 (marketplace sale) and withdrew 100
-# above, leaving 400. Two concurrent 400-withdrawals must not both succeed.
-curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
-  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":400,"bankAccountId":"ACC123"}' > "$TMP_DIR/withdraw_race_1" &
-curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
-  -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":400,"bankAccountId":"ACC123"}' > "$TMP_DIR/withdraw_race_2" &
-wait
-WITHDRAW_RACE_CODES=$({ cat "$TMP_DIR/withdraw_race_1"; echo; cat "$TMP_DIR/withdraw_race_2"; echo; } | sort | paste -sd, -)
-check "POST /revenues/withdraw concurrent overdraw (one wins, one 400)" "201,400" "$WITHDRAW_RACE_CODES"
+# The withdraw-overdraft race can no longer be tested here (see the
+# funding-bootstrap note above the marketplace purchase section) --
+# substituting P0.3's other advisory-lock-guarded race fix instead:
+# concurrent POST /subscriptions for the same not-yet-subscribed user
+# must yield exactly one 201 and one 409 (CSN-PAY-003), never two 201s.
+SUB_RACE_EMAIL="smoketest_subrace_${TS}@csn.dev"
+SUB_RACE_MOBILE="6${TS: -9}"
+curl -s -o /dev/null -X POST "$HOST/identity/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"fullName\":\"Smoke SubRace\",\"email\":\"$SUB_RACE_EMAIL\",\"mobile\":\"$SUB_RACE_MOBILE\",\"password\":\"$PASSWORD\",\"roles\":[\"COMPOSER\"]}"
+SUB_RACE_TOKEN=$(curl -s -X POST "$HOST/identity/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$SUB_RACE_EMAIL\",\"password\":\"$PASSWORD\"}" | jq -r '.token')
 
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/subscriptions" \
+  -H "Authorization: Bearer $SUB_RACE_TOKEN" -H "Content-Type: application/json" -d '{"plan":"PREMIUM"}' > "$TMP_DIR/sub_race_1" &
+curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/subscriptions" \
+  -H "Authorization: Bearer $SUB_RACE_TOKEN" -H "Content-Type: application/json" -d '{"plan":"PREMIUM"}' > "$TMP_DIR/sub_race_2" &
+wait
+SUB_RACE_CODES=$({ cat "$TMP_DIR/sub_race_1"; echo; cat "$TMP_DIR/sub_race_2"; echo; } | sort | paste -sd, -)
+check "POST /subscriptions concurrent duplicate (one wins, one 409)" "201,409" "$SUB_RACE_CODES"
+
+# AUTH has never had a nonzero balance in this test run (see the
+# funding-bootstrap note above) -- any withdrawal request must fail
+# insufficient-balance.
 NEG_WITHDRAW_EMPTY=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/payment/revenues/withdraw" \
   -H "$AUTH" -H "Content-Type: application/json" -d '{"amount":1,"bankAccountId":"ACC123"}')
 check "POST /revenues/withdraw with exhausted balance" 400 "$NEG_WITHDRAW_EMPTY"
 
 # Malformed display IDs used to reach Prisma as NaN filters and 500.
-GARBAGE_TUNE=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/TUNGARBAGE")
+GARBAGE_TUNE=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/tune/tunes/TUNGARBAGE" -H "$AUTH")
 check "GET /tunes/:tuneId with malformed id" 404 "$GARBAGE_TUNE"
 
 GARBAGE_LYRICS=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/lyrics/lyrics/LYRGARBAGE" -H "$AUTH")

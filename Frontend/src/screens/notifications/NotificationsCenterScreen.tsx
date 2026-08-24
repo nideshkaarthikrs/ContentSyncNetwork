@@ -16,6 +16,8 @@ import { useMarkAllRead } from "../../hooks/notifications/useMarkAllRead";
 import { useMarkNotificationRead } from "../../hooks/notifications/useMarkNotificationRead";
 import { useNotifications } from "../../hooks/notifications/useNotifications";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NotificationsCenter">;
 
@@ -51,6 +53,9 @@ function timeAgo(dateString: string): string {
 export default function NotificationsCenterScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const { data, isLoading } = useNotifications();
   const markAllRead = useMarkAllRead();
   const markRead = useMarkNotificationRead();
@@ -77,7 +82,7 @@ export default function NotificationsCenterScreen({
         <MaterialCommunityIcons
           name={TYPE_ICON[item.type] as any}
           size={24}
-          color="#7C3AED"
+          color={theme.colors.primary}
         />
       </View>
 
@@ -108,6 +113,7 @@ export default function NotificationsCenterScreen({
           <Feather
             name="arrow-left"
             size={22}
+            color={theme.colors.text}
           />
         </TouchableOpacity>
 
@@ -126,7 +132,7 @@ export default function NotificationsCenterScreen({
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#7C3AED" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
       ) : notifications.length === 0 ? (
         <Text style={styles.emptyText}>No notifications yet</Text>
       ) : (
@@ -143,14 +149,10 @@ export default function NotificationsCenterScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -162,18 +164,19 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   markRead: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "600"
   },
 
   emptyText: {
     textAlign: "center",
     marginTop: 40,
-    color: "#777"
+    color: theme.colors.textMuted
   },
 
   card: {
@@ -183,16 +186,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "#EEE"
+    borderColor: theme.colors.border
   },
 
+  // Decorative light-purple icon well behind the notification-type icon; no
+  // matching theme token, so branch to a deep purple in dark mode to keep
+  // the icon legible against the dark background.
   iconContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#F5F3FF",
+    backgroundColor: theme.dark ? "#3B2A5A" : "#F5F3FF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12
@@ -200,12 +206,13 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 15,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   time: {
     marginTop: 4,
-    color: "#777",
+    color: theme.colors.textMuted,
     fontSize: 12
   },
 
@@ -213,6 +220,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: PRIMARY
+    backgroundColor: theme.colors.primary
   }
 });

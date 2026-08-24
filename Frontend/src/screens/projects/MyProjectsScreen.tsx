@@ -13,10 +13,15 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useMyProjects } from "../../hooks/project/useMyProjects";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MyProjects">;
 
 export default function MyProjectsScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const { data, isLoading } = useMyProjects(1, 20);
   const projects = data?.projects ?? [];
 
@@ -36,12 +41,12 @@ export default function MyProjectsScreen({ navigation }: Props) {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {isLoading && (
-          <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
+          <ActivityIndicator style={{ marginTop: 20 }} color={theme.colors.primary} />
         )}
 
         {!isLoading && projects.length === 0 && (
           <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="folder-open-outline" size={40} color="#CCC" />
+            <MaterialCommunityIcons name="folder-open-outline" size={40} color={theme.colors.textMuted} />
             <Text style={styles.emptyText}>No projects yet. Create your first one.</Text>
           </View>
         )}
@@ -58,7 +63,7 @@ export default function MyProjectsScreen({ navigation }: Props) {
             }
           >
             <View style={styles.projectIconWrap}>
-              <Feather name="folder" size={24} color={PRIMARY} />
+              <Feather name="folder" size={24} color={theme.colors.primary} />
             </View>
 
             <View style={{ flex: 1 }}>
@@ -79,18 +84,14 @@ export default function MyProjectsScreen({ navigation }: Props) {
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "#888",
+    color: theme.colors.textMuted,
     marginHorizontal: 20,
     textAlign: "center",
     marginTop: 10
@@ -123,27 +124,31 @@ const styles = StyleSheet.create({
     marginTop: 15
   },
 
+  // Decorative light-purple icon well behind the folder icon; no matching
+  // theme token, so branch to a deep purple in dark mode to keep the icon
+  // legible against the dark background.
   projectIconWrap: {
     width: 60,
     height: 60,
     borderRadius: 10,
     marginRight: 12,
-    backgroundColor: "#F3E8FF",
+    backgroundColor: theme.dark ? "#3B2A5A" : "#F3E8FF",
     justifyContent: "center",
     alignItems: "center"
   },
 
   projectName: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   projectMeta: {
-    color: "#666",
+    color: theme.colors.textMuted,
     marginTop: 4
   },
 
   time: {
-    color: "#888",
+    color: theme.colors.textMuted,
     fontSize: 12
   }
 });

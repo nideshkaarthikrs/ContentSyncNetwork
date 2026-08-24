@@ -20,6 +20,8 @@ import { useProfile } from "../../hooks/profile/useProfile";
 import { useUploadPhoto } from "../../hooks/profile/useUploadPhoto";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
 const FALLBACK_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
@@ -29,6 +31,9 @@ type Props = NativeStackScreenProps<RootStackParamList, "CreatorProfile">;
 export default function CreatorProfileScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const userId = useAuthStore((state) => state.user?.userId);
   const { data: profile, isLoading, error } = useProfile(userId);
   const uploadPhoto = useUploadPhoto(userId);
@@ -101,10 +106,10 @@ export default function CreatorProfileScreen({
         {/* Profile */}
 
         {isLoading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color={PRIMARY} />
+          <ActivityIndicator style={{ marginTop: 30 }} color={theme.colors.primary} />
         ) : isPrivateProfile ? (
           <View style={styles.privateState}>
-            <Feather name="lock" size={32} color="#999" />
+            <Feather name="lock" size={32} color={theme.colors.textMuted} />
             <Text style={styles.privateText}>
               This profile is private
             </Text>
@@ -176,19 +181,15 @@ export default function CreatorProfileScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   cover: {
     height: 180,
-    backgroundColor: PRIMARY
+    backgroundColor: theme.colors.primary
   },
 
   backButton: {
@@ -201,6 +202,9 @@ const styles = StyleSheet.create({
     marginTop: -50
   },
 
+  // White photo-frame ring around the avatar, which overlaps the primary
+  // cover; kept literal so the ring reads consistently against the photo
+  // in both themes (same rationale as the white-on-primary exception).
   profileImage: {
     width: 100,
     height: 100,
@@ -216,7 +220,9 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
+    // White ring separating the primary-colored badge from the avatar photo
+    // behind it; kept literal for the same reason as profileImage's border.
     borderWidth: 2,
     borderColor: "#FFF",
     justifyContent: "center",
@@ -226,11 +232,12 @@ const styles = StyleSheet.create({
   name: {
     marginTop: 10,
     fontSize: 24,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   role: {
-    color: "#666",
+    color: theme.colors.textMuted,
     marginTop: 5
   },
 
@@ -244,11 +251,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "700",
-    textAlign: "center"
+    textAlign: "center",
+    color: theme.colors.text
   },
 
   statLabel: {
-    color: "#666",
+    color: theme.colors.textMuted,
     textAlign: "center"
   },
 
@@ -257,13 +265,14 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 10,
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   aboutText: {
     marginHorizontal: 20,
     lineHeight: 22,
-    color: "#555"
+    color: theme.colors.text
   },
 
   privateState: {
@@ -275,7 +284,7 @@ const styles = StyleSheet.create({
   privateText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#666",
+    color: theme.colors.textMuted,
     textAlign: "center"
   }
 });

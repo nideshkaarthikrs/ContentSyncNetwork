@@ -13,12 +13,17 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RevenueDashboard">;
 
 export default function RevenueDashboardScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const { data, isLoading } = useRevenueDashboard();
 
   const revenueItems = data
@@ -42,6 +47,7 @@ export default function RevenueDashboardScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -116,14 +122,10 @@ export default function RevenueDashboardScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -135,18 +137,21 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   summaryCard: {
     margin: 20,
-    backgroundColor: "#7C3AED",
+    backgroundColor: theme.colors.primary,
     borderRadius: 15,
     padding: 25
   },
 
+  // Muted-white label on the primary card; kept as a white-family literal
+  // (opacity instead of a separate hex) per the white-on-primary exception.
   summaryLabel: {
-    color: "#DDD",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 14
   },
 
@@ -162,14 +167,15 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 12,
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   sourceCard: {
     marginHorizontal: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     padding: 15,
     flexDirection: "row",
@@ -177,16 +183,17 @@ const styles = StyleSheet.create({
   },
 
   sourceTitle: {
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   amount: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700"
   },
 
   withdrawButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 25,
     height: 55,

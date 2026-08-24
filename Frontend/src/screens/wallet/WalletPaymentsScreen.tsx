@@ -18,12 +18,17 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
 import { useWithdraw } from "../../hooks/payment/useWithdraw";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WalletPayments">;
 
 export default function WalletPaymentsScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const { data, isLoading } = useRevenueDashboard();
   const withdraw = useWithdraw();
 
@@ -77,6 +82,7 @@ export default function WalletPaymentsScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -126,7 +132,7 @@ export default function WalletPaymentsScreen({
             <MaterialCommunityIcons
               name="bank-transfer-out"
               size={26}
-              color="#7C3AED"
+              color={theme.colors.primary}
             />
 
             <Text style={styles.actionText}>
@@ -177,14 +183,10 @@ export default function WalletPaymentsScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -196,18 +198,21 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   walletCard: {
     margin: 20,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     borderRadius: 18,
     padding: 24
   },
 
+  // Muted-white label on the primary card; kept as a white-family literal
+  // (opacity instead of a separate hex) per the white-on-primary exception.
   balanceLabel: {
-    color: "#DDD"
+    color: "rgba(255,255,255,0.75)"
   },
 
   balance: {
@@ -217,14 +222,17 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
 
+  // Decorative light-lavender text on top of `primary`; primary itself is a
+  // lighter hex in dark mode, so branch to a deep purple there to keep it
+  // legible (same pattern as RightsDetailScreen's `category` style).
   updated: {
-    color: "#E9D5FF",
+    color: theme.dark ? "#4C1D95" : "#E9D5FF",
     marginTop: 8,
     fontSize: 12
   },
 
   spendLine: {
-    color: "#FCA5A5",
+    color: theme.colors.danger,
     marginTop: 6,
     fontSize: 12,
     fontWeight: "600"
@@ -236,9 +244,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 20
   },
 
+  // Decorative light-purple button fill; no matching theme token, so branch
+  // to a deep purple in dark mode to keep the icon/label legible.
   actionButton: {
     width: "100%",
-    backgroundColor: "#F5F3FF",
+    backgroundColor: theme.dark ? "#3B2A5A" : "#F5F3FF",
     paddingVertical: 18,
     borderRadius: 14,
     alignItems: "center"
@@ -246,7 +256,8 @@ const styles = StyleSheet.create({
 
   actionText: {
     marginTop: 8,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   withdrawForm: {
@@ -257,14 +268,15 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     paddingHorizontal: 15,
-    marginBottom: 10
+    marginBottom: 10,
+    color: theme.colors.text
   },
 
   submitButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 52,
     borderRadius: 10,
     justifyContent: "center",
@@ -281,18 +293,19 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 15,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "space-between"
   },
 
   transactionTitle: {
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   amount: {
     fontWeight: "700",
-    color: "#10B981"
+    color: theme.colors.success
   }
 });

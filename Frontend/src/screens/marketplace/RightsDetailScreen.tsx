@@ -11,17 +11,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RightsListing } from "../../api/services/rights.api";
 import { useDrmToken } from "../../hooks/rights/useDrmToken";
 import { usePurchaseRights } from "../../hooks/rights/usePurchaseRights";
 import { useRaiseClaim } from "../../hooks/rights/useRaiseClaim";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "RightsDetail">;
 
 export default function RightsDetailScreen({
   navigation,

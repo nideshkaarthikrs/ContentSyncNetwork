@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { Role } from "../../api/services/auth.api";
@@ -32,13 +33,11 @@ import { useProjectFiles } from "../../hooks/project/useProjectFiles";
 import { useProjectMembers } from "../../hooks/project/useProjectMembers";
 import { useRespondToInvite } from "../../hooks/project/useRespondToInvite";
 import { useUploadProjectFile } from "../../hooks/project/useUploadProjectFile";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "ProjectWorkspace">;
 
 const INVITABLE_ROLES: Role[] = ["COMPOSER", "LYRICIST", "SINGER", "DIRECTOR"];
 
@@ -150,7 +149,7 @@ function ProjectWorkspaceContent({
   projectName: string;
   activeTab: string;
   setActiveTab: (v: string) => void;
-  navigation: any;
+  navigation: Props["navigation"];
 }) {
   return (
     <SafeAreaView style={styles.container}>

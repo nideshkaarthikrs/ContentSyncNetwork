@@ -12,14 +12,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
 import { useWithdraw } from "../../hooks/payment/useWithdraw";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "WalletPayments">;
 
 export default function WalletPaymentsScreen({
   navigation

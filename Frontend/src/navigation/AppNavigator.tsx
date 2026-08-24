@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '../store/authStore';
 import BottomTabs from './BottomTabs';
+import { RootStackParamList } from './types';
 
 // Auth
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -67,7 +68,7 @@ import WalletPaymentsScreen from '../screens/wallet/WalletPaymentsScreen';
 // Analytics
 import AnalyticsDashboardScreen from '../screens/analytics/AnalyticsDashboardScreen';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const MIN_SPLASH_MS = 2500;
 

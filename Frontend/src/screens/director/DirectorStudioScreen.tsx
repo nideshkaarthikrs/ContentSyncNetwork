@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
@@ -24,12 +25,10 @@ import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useCreateVideoProject } from "../../hooks/video/useCreateVideoProject";
 import { useGenerateStoryboard } from "../../hooks/video/useGenerateStoryboard";
 import { useUploadVideo } from "../../hooks/video/useUploadVideo";
+import { RootStackParamList } from "../../navigation/types";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "DirectorStudio">;
 
 export default function DirectorStudioScreen({
   navigation,

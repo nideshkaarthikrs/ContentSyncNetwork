@@ -9,15 +9,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { Role } from "../../api/services/auth.api";
 import { useRegister } from "../../hooks/auth/useRegister";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "RoleSelection">;
 
 const roles: { id: string; title: string; icon: string; role: Role }[] = [
   {

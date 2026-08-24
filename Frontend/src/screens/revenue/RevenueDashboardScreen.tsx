@@ -9,12 +9,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useRevenueDashboard } from "../../hooks/payment/useRevenueDashboard";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "RevenueDashboard">;
 
 export default function RevenueDashboardScreen({
   navigation

@@ -7,14 +7,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { RootStackParamList } from "../../navigation/types";
 import { Theme } from "../../theme/theme";
 import { useTheme } from "../../theme/useTheme";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "ComingSoon">;
 
 export default function ComingSoonScreen({ navigation, route }: Props) {
   const theme = useTheme();

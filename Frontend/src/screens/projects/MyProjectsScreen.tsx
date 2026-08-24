@@ -9,12 +9,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useMyProjects } from "../../hooks/project/useMyProjects";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "MyProjects">;
 
 export default function MyProjectsScreen({ navigation }: Props) {
   const { data, isLoading } = useMyProjects(1, 20);

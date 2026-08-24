@@ -9,15 +9,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { Notification, NotificationType } from "../../api/services/notification.api";
 import { useMarkAllRead } from "../../hooks/notifications/useMarkAllRead";
 import { useMarkNotificationRead } from "../../hooks/notifications/useMarkNotificationRead";
 import { useNotifications } from "../../hooks/notifications/useNotifications";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "NotificationsCenter">;
 
 const TYPE_ICON: Record<NotificationType, string> = {
   FOLLOW: "account-plus",

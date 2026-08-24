@@ -10,18 +10,17 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useTune } from "../../hooks/tune/useTune";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "TuneDetail">;
 
 export default function TuneDetailScreen({
   navigation,

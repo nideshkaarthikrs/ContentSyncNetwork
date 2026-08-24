@@ -9,15 +9,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { FeedItem, FeedItemType } from "../../api/services/feed.api";
 import { useHomeFeed } from "../../hooks/feed/useHomeFeed";
+import { RootStackParamList } from "../../navigation/types";
 import { Theme } from "../../theme/theme";
 import { useTheme } from "../../theme/useTheme";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "HomeFeed">;
 
 const FEED_ICON: Record<FeedItemType, string> = {
   TUNE: "music-note",

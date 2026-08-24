@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
@@ -19,11 +20,10 @@ import { TuneAnalysis } from "../../api/services/tune.api";
 import SelectListModal from "../../components/common/SelectListModal";
 import { useAnalyzeTune } from "../../hooks/tune/useAnalyzeTune";
 import { useCreateTune } from "../../hooks/tune/useCreateTune";
+import { RootStackParamList } from "../../navigation/types";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "UploadTune">;
 
 const GENRES = ["Pop", "Classical", "Folk", "Hip-Hop", "Rock", "Devotional", "Electronic", "Jazz"];
 const MOODS = ["Happy", "Sad", "Romantic", "Energetic", "Calm", "Melancholic", "Uplifting"];

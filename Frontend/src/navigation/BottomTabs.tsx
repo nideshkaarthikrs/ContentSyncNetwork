@@ -4,8 +4,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import BusinessStack from "./BusinessStack";
 import CreatorStack from "./CreatorStack";
 import HomeStack from "./HomeStack";
+import { MainTabParamList } from "./types";
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function BottomTabs() {
   return (

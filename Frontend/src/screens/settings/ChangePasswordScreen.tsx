@@ -10,13 +10,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useChangePassword } from "../../hooks/auth/useChangePassword";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "ChangePassword">;
 
 export default function ChangePasswordScreen({ navigation }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");

@@ -12,19 +12,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { resolveAssetUrl } from "../../config/services";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUploadPhoto } from "../../hooks/profile/useUploadPhoto";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
 const FALLBACK_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "CreatorProfile">;
 
 export default function CreatorProfileScreen({
   navigation

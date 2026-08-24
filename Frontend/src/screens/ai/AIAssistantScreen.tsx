@@ -12,14 +12,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useAssistantChat } from "../../hooks/ai/useAssistantChat";
+import { RootStackParamList } from "../../navigation/types";
 import { useToastStore } from "../../store/toastStore";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "AIAssistant">;
 
 interface Message {
   id: string;

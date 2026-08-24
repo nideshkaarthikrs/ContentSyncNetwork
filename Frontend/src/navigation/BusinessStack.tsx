@@ -1,3 +1,6 @@
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   FlatList,
   StyleSheet,
@@ -8,7 +11,17 @@ import {
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const businessModules = [
+import { MainTabParamList, RootStackParamList } from './types';
+
+type BusinessModule = {
+  id: string;
+  title: string;
+  icon: string;
+  screen: keyof RootStackParamList;
+  params?: Record<string, unknown>;
+};
+
+const businessModules: BusinessModule[] = [
   {
     id: '1',
     title: 'Marketplace',
@@ -66,17 +79,14 @@ const businessModules = [
   },
 ];
 
-type BusinessModule = {
-  id: string;
-  title: string;
-  icon: string;
-  screen: string;
-  params?: Record<string, unknown>;
-};
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Business'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export default function BusinessStack({
   navigation,
-}: any) {
+}: Props) {
   const renderItem = ({
     item,
   }: {
@@ -85,7 +95,11 @@ export default function BusinessStack({
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
-        navigation.navigate(item.screen, item.params)
+        // `item.screen`/`item.params` are validated against RootStackParamList
+        // (typos in the array above are a tsc error), but `navigate`'s overloads
+        // can't be resolved for a dynamic (non-literal) route name -- see the
+        // dispatch-table ruling in the task brief. Cast only at this call site.
+        navigation.navigate(item.screen as any, item.params)
       }
     >
       <View style={styles.iconContainer}>

@@ -10,14 +10,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { SubscriptionPlan } from "../../api/services/payment.api";
 import { useSubscribe } from "../../hooks/payment/useSubscribe";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "SubscriptionPlans">;
 
 const plans: {
   id: SubscriptionPlan;

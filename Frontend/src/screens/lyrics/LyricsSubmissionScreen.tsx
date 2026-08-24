@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import SelectListModal from "../../components/common/SelectListModal";
@@ -17,11 +18,9 @@ import TunePlayButton from "../../components/common/TunePlayButton";
 import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useCreateLyrics } from "../../hooks/lyrics/useCreateLyrics";
 import { useGenerateLyrics } from "../../hooks/lyrics/useGenerateLyrics";
+import { RootStackParamList } from "../../navigation/types";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "LyricsSubmission">;
 
 const LANGUAGES = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada"];
 

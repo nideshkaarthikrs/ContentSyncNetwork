@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { RNFile } from "../../api/rnFile";
@@ -23,12 +24,10 @@ import { useTuneLyrics } from "../../hooks/lyrics/useTuneLyrics";
 import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useAnalyzePerformance } from "../../hooks/voice/useAnalyzePerformance";
 import { useUploadPerformance } from "../../hooks/voice/useUploadPerformance";
+import { RootStackParamList } from "../../navigation/types";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
-interface Props {
-  navigation: any;
-  route: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "SingerStudio">;
 
 export default function SingerStudioScreen({
   navigation,

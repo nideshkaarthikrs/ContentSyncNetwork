@@ -10,20 +10,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useLogout } from "../../hooks/auth/useLogout";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
 import { usePreferencesStore } from "../../store/preferencesStore";
 import { useToastStore } from "../../store/toastStore";
 import { Theme } from "../../theme/theme";
 import { useTheme } from "../../theme/useTheme";
 
-interface Props {
-  navigation: any;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "SettingsPreferences">;
 
 // Module-scope (not defined inside the screen component): a component defined inside
 // a render body is a new function identity every render, which React treats as a new
@@ -40,9 +40,12 @@ function MenuItem({
 }: {
   icon: string;
   title: string;
-  screen?: string;
+  // A local string-keyed dispatch table, same as HomeStack/CreatorStack/BusinessStack --
+  // `screen` is checked against RootStackParamList's route names (typo-proofing the
+  // route name), while `params` stays loosely typed since it isn't tied to one route.
+  screen?: keyof RootStackParamList;
   params?: Record<string, unknown>;
-  navigation: any;
+  navigation: Props["navigation"];
   styles: ReturnType<typeof getStyles>;
   theme: Theme;
 }) {
@@ -50,8 +53,12 @@ function MenuItem({
     <TouchableOpacity
       style={styles.menuItem}
       onPress={() =>
+        // `screen` is validated against RootStackParamList above (a typo'd route
+        // name passed to a MenuItem is a tsc error), but `navigate`'s overloads
+        // can't be resolved for a dynamic (non-literal) route name -- same
+        // dispatch-table tradeoff as HomeStack/CreatorStack/BusinessStack.
         screen &&
-        navigation.navigate(screen, params)
+        navigation.navigate(screen as any, params)
       }
     >
       <View style={styles.menuLeft}>

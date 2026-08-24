@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+import { Theme } from '../theme/theme';
+import { useTheme } from '../theme/useTheme';
 import { MainTabParamList, RootStackParamList } from './types';
 
 type HomeModule = {
@@ -87,6 +90,10 @@ type Props = CompositeScreenProps<
 export default function HomeStack({
   navigation,
 }: Props) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = getStyles(theme, insets);
+
   const renderItem = ({
     item,
   }: {
@@ -106,7 +113,7 @@ export default function HomeStack({
         <Ionicons
           name={item.icon as any}
           size={30}
-          color="#7C3AED"
+          color={theme.colors.primary}
         />
       </View>
 
@@ -142,14 +149,13 @@ export default function HomeStack({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme, insets: { top: number; bottom: number }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 14,
-    paddingTop: 50,
-    marginTop: 36,
-    marginBottom: 50
+    paddingTop: 50 + insets.top,
+    paddingBottom: insets.bottom
   },
 
   header: {
@@ -159,18 +165,18 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: theme.colors.text,
   },
 
   subHeading: {
     marginTop: 6,
-    color: '#6B7280',
+    color: theme.colors.textMuted,
     fontSize: 15,
   },
 
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.surface,
     margin: 6,
     borderRadius: 22,
     height: 120,
@@ -183,7 +189,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 18,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: theme.dark ? '#3B2E5C' : '#F3E8FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -192,7 +198,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#374151',
+    color: theme.colors.text,
     textAlign: 'center',
   },
 });

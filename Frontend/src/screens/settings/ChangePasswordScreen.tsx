@@ -15,10 +15,14 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getErrorMessage } from "../../api/getErrorMessage";
 import { useChangePassword } from "../../hooks/auth/useChangePassword";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ChangePassword">;
 
 export default function ChangePasswordScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +47,14 @@ export default function ChangePasswordScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={22} />
+          <Feather name="arrow-left" size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Change Password</Text>
         <View style={{ width: 22 }} />
       </View>
 
       <View style={styles.inputContainer}>
-        <MaterialCommunityIcons name="lock-outline" size={20} color="#888" />
+        <MaterialCommunityIcons name="lock-outline" size={20} color={theme.colors.textMuted} />
         <TextInput
           placeholder="Current Password"
           secureTextEntry
@@ -61,7 +65,7 @@ export default function ChangePasswordScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.inputContainer}>
-        <MaterialCommunityIcons name="lock-check-outline" size={20} color="#888" />
+        <MaterialCommunityIcons name="lock-check-outline" size={20} color={theme.colors.textMuted} />
         <TextInput
           placeholder="New Password"
           secureTextEntry
@@ -86,15 +90,11 @@ export default function ChangePasswordScreen({ navigation }: Props) {
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    paddingHorizontal: 20,
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 20
   },
 
   header: {
@@ -106,14 +106,15 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 15,
@@ -123,17 +124,18 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 15
+    fontSize: 15,
+    color: theme.colors.text
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center",
     marginBottom: 15
   },
 
   submitButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 56,
     borderRadius: 12,
     justifyContent: "center",

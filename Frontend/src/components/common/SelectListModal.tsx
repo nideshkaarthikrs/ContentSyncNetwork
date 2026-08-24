@@ -10,6 +10,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
+
 interface SelectListModalProps<T> {
   visible: boolean;
   title: string;
@@ -33,6 +36,9 @@ export default function SelectListModal<T>({
   emptyText = "Nothing here yet.",
   renderRight
 }: SelectListModalProps<T>) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
@@ -40,7 +46,7 @@ export default function SelectListModal<T>({
           <Text style={styles.title}>{title}</Text>
 
           <TouchableOpacity onPress={onClose}>
-            <Feather name="x" size={22} color="#111" />
+            <Feather name="x" size={22} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -53,7 +59,7 @@ export default function SelectListModal<T>({
             <TouchableOpacity style={styles.row} onPress={() => onSelect(item)}>
               <Text style={styles.rowText}>{labelExtractor(item)}</Text>
               {renderRight?.(item)}
-              <Feather name="chevron-right" size={18} color="#888" />
+              <Feather name="chevron-right" size={18} color={theme.colors.textMuted} />
             </TouchableOpacity>
           )}
         />
@@ -62,10 +68,10 @@ export default function SelectListModal<T>({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF"
+    backgroundColor: theme.colors.background
   },
   header: {
     flexDirection: "row",
@@ -75,7 +81,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
   row: {
     flexDirection: "row",
@@ -83,17 +90,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0"
+    borderBottomColor: theme.colors.border
   },
   rowText: {
     fontSize: 15,
-    color: "#111",
+    color: theme.colors.text,
     flex: 1,
     marginRight: 10
   },
   empty: {
     textAlign: "center",
-    color: "#888",
+    color: theme.colors.textMuted,
     marginTop: 40
   }
 });

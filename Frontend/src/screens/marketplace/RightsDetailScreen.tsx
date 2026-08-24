@@ -19,6 +19,8 @@ import { useDrmToken } from "../../hooks/rights/useDrmToken";
 import { usePurchaseRights } from "../../hooks/rights/usePurchaseRights";
 import { useRaiseClaim } from "../../hooks/rights/useRaiseClaim";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RightsDetail">;
 
@@ -27,6 +29,9 @@ export default function RightsDetailScreen({
   route
 }: Props) {
   const listing: RightsListing | undefined = route?.params?.listing;
+
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
@@ -42,7 +47,7 @@ export default function RightsDetailScreen({
       <SafeAreaView style={[styles.container, styles.centered]}>
         <Text style={styles.owner}>No listing selected.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-          <Text style={{ color: PRIMARY, fontWeight: "700" }}>Go Back</Text>
+          <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -98,6 +103,7 @@ export default function RightsDetailScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -161,7 +167,7 @@ export default function RightsDetailScreen({
           <MaterialCommunityIcons
             name="play-network-outline"
             size={28}
-            color="#7C3AED"
+            color={theme.colors.primary}
           />
 
           <Text style={styles.contractText}>
@@ -217,21 +223,22 @@ const Row = ({
 }: {
   title: string;
   value: string;
-}) => (
-  <View style={styles.row}>
-    <Text>{title}</Text>
-    <Text>{value}</Text>
-  </View>
-);
+}) => {
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
-const PRIMARY = "#7C3AED";
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{title}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   centered: {
@@ -248,12 +255,13 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   heroCard: {
     margin: 20,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     borderRadius: 18,
     padding: 24
   },
@@ -264,8 +272,12 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
 
+  // Decorative tint text on top of `primary`; primary itself is a different,
+  // lighter hex in dark mode (#A78BFA vs light mode's #7C3AED), so the original
+  // fixed light-lavender text loses contrast against the lighter dark-mode
+  // card. Branch to a deep purple in dark mode to keep it legible there.
   category: {
-    color: "#E9D5FF",
+    color: theme.dark ? "#4C1D95" : "#E9D5FF",
     marginTop: 8
   },
 
@@ -281,20 +293,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   infoCard: {
     marginHorizontal: 20,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     padding: 16
   },
 
   owner: {
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   row: {
@@ -303,46 +317,56 @@ const styles = StyleSheet.create({
     marginVertical: 8
   },
 
+  rowLabel: {
+    color: theme.colors.textMuted
+  },
+
+  rowValue: {
+    color: theme.colors.text
+  },
+
   contractCard: {
     marginHorizontal: 20,
     padding: 18,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     flexDirection: "row",
     alignItems: "center"
   },
 
   contractText: {
     marginLeft: 12,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   streamUrl: {
     marginHorizontal: 20,
     marginTop: 10,
-    color: "#666",
+    color: theme.colors.textMuted,
     fontSize: 12
   },
 
   claimInput: {
     marginHorizontal: 20,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     minHeight: 80,
     padding: 15,
-    textAlignVertical: "top"
+    textAlignVertical: "top",
+    color: theme.colors.text
   },
 
   claimStatus: {
     marginHorizontal: 20,
     marginTop: 10,
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   buyButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 25,
     height: 55,
@@ -359,7 +383,7 @@ const styles = StyleSheet.create({
 
   secondaryButton: {
     borderWidth: 1,
-    borderColor: PRIMARY,
+    borderColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 12,
     height: 55,
@@ -369,7 +393,7 @@ const styles = StyleSheet.create({
   },
 
   secondaryText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700"
   }
 });

@@ -18,6 +18,8 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { useAssistantChat } from "../../hooks/ai/useAssistantChat";
 import { RootStackParamList } from "../../navigation/types";
 import { useToastStore } from "../../store/toastStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AIAssistant">;
 
@@ -41,6 +43,9 @@ const QUICK_PROMPTS: { label: string; prompt: string }[] = [
 export default function AIAssistantScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const [message, setMessage] =
     useState("");
 
@@ -149,7 +154,7 @@ export default function AIAssistantScreen({
             <Feather
               name="arrow-left"
               size={22}
-              color="#111"
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -159,7 +164,7 @@ export default function AIAssistantScreen({
             <MaterialCommunityIcons
               name="robot-outline"
               size={22}
-              color="#7C3AED"
+              color={theme.colors.primary}
             />
 
             <Text style={styles.headerTitle}>
@@ -220,7 +225,7 @@ export default function AIAssistantScreen({
               style={styles.quickChip}
               onPress={() => fillPrompt(chip.prompt)}
             >
-              <Text>
+              <Text style={styles.quickChipText}>
                 {chip.label}
               </Text>
             </TouchableOpacity>
@@ -231,14 +236,10 @@ export default function AIAssistantScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -256,7 +257,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     marginLeft: 8,
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   messageBubble: {
@@ -267,23 +269,23 @@ const styles = StyleSheet.create({
   },
 
   aiBubble: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: theme.dark ? theme.colors.border : "#F3F4F6",
     alignSelf: "flex-start"
   },
 
   userBubble: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     alignSelf: "flex-end"
   },
 
   messageText: {
-    color: "#111"
+    color: theme.colors.text
   },
 
   sampleLabel: {
     marginTop: 4,
     fontSize: 11,
-    color: "#9CA3AF",
+    color: theme.colors.textMuted,
     fontStyle: "italic"
   },
 
@@ -298,16 +300,17 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 25,
-    paddingHorizontal: 15
+    paddingHorizontal: 15,
+    color: theme.colors.text
   },
 
   sendButton: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 10
@@ -322,11 +325,15 @@ const styles = StyleSheet.create({
 
   quickChip: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: theme.colors.border,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
     marginRight: 8,
     marginBottom: 8
+  },
+
+  quickChipText: {
+    color: theme.colors.text
   }
 });

@@ -13,6 +13,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useRightsListings } from "../../hooks/rights/useRightsListings";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RightsMarketplace">;
 
@@ -21,6 +23,9 @@ const CATEGORIES = ["All", "TUNE", "SONG", "VIDEO"];
 export default function RightsMarketplaceScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const [category, setCategory] = useState("All");
   const { data, isLoading } = useRightsListings(category === "All" ? undefined : category);
   const listings = data?.data ?? [];
@@ -37,6 +42,7 @@ export default function RightsMarketplaceScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -65,7 +71,7 @@ export default function RightsMarketplaceScreen({
               ]}
               onPress={() => setCategory(item)}
             >
-              <Text style={category === item ? styles.categoryTextActive : undefined}>
+              <Text style={category === item ? styles.categoryTextActive : styles.categoryText}>
                 {item}
               </Text>
             </TouchableOpacity>
@@ -75,7 +81,7 @@ export default function RightsMarketplaceScreen({
         {/* Listings */}
 
         {isLoading && (
-          <ActivityIndicator style={{ marginTop: 30 }} color={PRIMARY} />
+          <ActivityIndicator style={{ marginTop: 30 }} color={theme.colors.primary} />
         )}
 
         {!isLoading && listings.length === 0 && (
@@ -139,14 +145,10 @@ export default function RightsMarketplaceScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -158,12 +160,13 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   categoryChip: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: theme.colors.border,
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -171,8 +174,12 @@ const styles = StyleSheet.create({
   },
 
   categoryChipActive: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
+  },
+
+  categoryText: {
+    color: theme.colors.text
   },
 
   categoryTextActive: {
@@ -181,7 +188,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: theme.colors.textMuted,
     marginTop: 30,
     paddingHorizontal: 20
   },
@@ -190,7 +197,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 15,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     padding: 15
   },
@@ -202,34 +209,36 @@ const styles = StyleSheet.create({
 
   assetTitle: {
     fontWeight: "700",
-    fontSize: 16
+    fontSize: 16,
+    color: theme.colors.text
   },
 
   badge: {
-    backgroundColor: "#F3E8FF",
+    backgroundColor: theme.dark ? "#3B2E5C" : "#F3E8FF",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20
   },
 
   badgeText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontSize: 12
   },
 
   owner: {
     marginTop: 10,
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   price: {
     marginTop: 10,
     fontSize: 22,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   buyButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 45,
     borderRadius: 10,
     marginTop: 15,

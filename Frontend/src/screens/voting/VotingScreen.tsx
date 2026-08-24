@@ -17,6 +17,8 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { useCastVote } from "../../hooks/voting/useCastVote";
 import { useVoteResults } from "../../hooks/voting/useVoteResults";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Voting">;
 
@@ -39,6 +41,9 @@ const submissions: VotingCandidate[] = [];
 export default function VotingScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const [selectedId, setSelectedId] =
     useState<string | null>(null);
   const [votedForId, setVotedForId] = useState<string | null>(null);
@@ -79,6 +84,7 @@ export default function VotingScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -135,7 +141,7 @@ export default function VotingScreen({
                   style={styles.voteInfo}
                 >
                   {resultsLoading ? (
-                    <ActivityIndicator size="small" color={PRIMARY} />
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
                   ) : (
                     <>
                       <Text
@@ -175,14 +181,10 @@ export default function VotingScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -194,7 +196,8 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   participantCard: {
@@ -203,13 +206,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 15,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     padding: 15
   },
 
   selectedCard: {
-    borderColor: PRIMARY,
+    borderColor: theme.colors.primary,
     borderWidth: 2
   },
 
@@ -221,11 +224,12 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   role: {
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   voteInfo: {
@@ -234,16 +238,17 @@ const styles = StyleSheet.create({
   },
 
   voteCount: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   voteLabel: {
     fontSize: 12,
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   voteButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 25,
     height: 55,
@@ -259,7 +264,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: theme.colors.textMuted,
     marginTop: 30,
     marginHorizontal: 20
   }

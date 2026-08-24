@@ -7,10 +7,17 @@ import {
   Text,
   View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 // Purely presentational: AppNavigator renders this while the session hydrates
 // and decides itself which navigator group to mount afterwards.
 export default function SplashScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = getStyles(theme, insets);
   // useRef, not a plain new Animated.Value: a re-render would otherwise bind
   // the style to a fresh 0.6-scale value while the spring drives the old one.
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
@@ -24,7 +31,7 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} />
 
       <Animated.View
         style={[
@@ -35,7 +42,7 @@ export default function SplashScreen() {
         <MaterialCommunityIcons
           name="music-note"
           size={70}
-          color="#7C3AED"
+          color={theme.colors.primary}
         />
 
         <Text style={styles.logo}>CSN</Text>
@@ -58,15 +65,14 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme, insets: { top: number; bottom: number }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.colors.background,
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 80,
-    marginTop: 36,
-    marginBottom: 50
+    paddingTop: 80 + insets.top,
+    paddingBottom: 80 + insets.bottom
   },
 
   logoContainer: {
@@ -78,7 +84,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 54,
     fontWeight: "bold",
-    color: "#7C3AED",
+    color: theme.colors.primary,
     marginTop: 10
   },
 
@@ -86,13 +92,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "600",
     marginTop: 10,
-    color: "#111827"
+    color: theme.colors.text
   },
 
   subtitle: {
     fontSize: 14,
     marginTop: 10,
-    color: "#6B7280"
+    color: theme.colors.textMuted
   },
 
   waveContainer: {
@@ -100,7 +106,7 @@ const styles = StyleSheet.create({
   },
 
   wave: {
-    color: "#A855F7",
+    color: theme.colors.primary,
     fontSize: 18
   }
 });

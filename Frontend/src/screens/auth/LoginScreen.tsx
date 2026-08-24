@@ -139,9 +139,7 @@ const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: 24,
-    marginTop: 36,
-    marginBottom: 50
+    paddingHorizontal: 24
   },
 
   heading: {

@@ -35,6 +35,8 @@ import { useRespondToInvite } from "../../hooks/project/useRespondToInvite";
 import { useUploadProjectFile } from "../../hooks/project/useUploadProjectFile";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProjectWorkspace">;
@@ -83,6 +85,8 @@ function CreateProjectForm({
   onCreated: (projectId: string) => void;
   onBack: () => void;
 }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const [error, setError] = useState<string | null>(null);
   const createProject = useCreateProject();
 
@@ -151,6 +155,8 @@ function ProjectWorkspaceContent({
   setActiveTab: (v: string) => void;
   navigation: Props["navigation"];
 }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -211,6 +217,8 @@ function ProjectWorkspaceContent({
 }
 
 function OverviewTab({ projectId }: { projectId: string }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const { data, isLoading } = useProjectMembers(projectId);
   const inviteCollaborator = useInviteCollaborator(projectId);
   const respondToInvite = useRespondToInvite(projectId);
@@ -246,7 +254,7 @@ function OverviewTab({ projectId }: { projectId: string }) {
         Team Members
       </Text>
 
-      {isLoading && <ActivityIndicator style={{ marginLeft: 20 }} color={PRIMARY} />}
+      {isLoading && <ActivityIndicator style={{ marginLeft: 20 }} color={theme.colors.primary} />}
 
       {!isLoading && (data?.members.length ?? 0) === 0 && (
         <Text style={styles.emptyText}>No collaborators yet. Invite one below.</Text>
@@ -347,6 +355,8 @@ function OverviewTab({ projectId }: { projectId: string }) {
 }
 
 function FilesTab({ projectId }: { projectId: string }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const { data, isLoading } = useProjectFiles(projectId);
   const uploadFile = useUploadProjectFile(projectId);
   const files = data?.files ?? [];
@@ -405,10 +415,10 @@ function FilesTab({ projectId }: { projectId: string }) {
       </TouchableOpacity>
 
       {isLoading ? (
-        <ActivityIndicator color={PRIMARY} style={{ marginTop: 30 }} />
+        <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 30 }} />
       ) : files.length === 0 ? (
         <View style={{ alignItems: "center", padding: 40 }}>
-          <MaterialCommunityIcons name="folder-open-outline" size={40} color="#CCC" />
+          <MaterialCommunityIcons name="folder-open-outline" size={40} color={theme.colors.textMuted} />
           <Text style={styles.emptyText}>No files shared yet.</Text>
         </View>
       ) : (
@@ -418,7 +428,7 @@ function FilesTab({ projectId }: { projectId: string }) {
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10 }}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.fileRow} onPress={() => openFile(item)}>
-              <Feather name="file-text" size={20} color={PRIMARY} />
+              <Feather name="file-text" size={20} color={theme.colors.primary} />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={styles.fileName}>{item.filename}</Text>
                 <Text style={styles.fileMeta}>
@@ -434,6 +444,8 @@ function FilesTab({ projectId }: { projectId: string }) {
 }
 
 function ChatTab({ projectId }: { projectId: string }) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const { data, isLoading } = useProjectMessages(projectId);
   const sendMessage = useSendMessage(projectId);
   useChatSocket(projectId);
@@ -456,7 +468,7 @@ function ChatTab({ projectId }: { projectId: string }) {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {isLoading && <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />}
+      {isLoading && <ActivityIndicator style={{ marginTop: 20 }} color={theme.colors.primary} />}
 
       <FlatList
         data={data?.messages ?? []}
@@ -492,25 +504,21 @@ function ChatTab({ projectId }: { projectId: string }) {
         />
 
         <TouchableOpacity onPress={handleSend} disabled={sendMessage.isPending}>
-          <Ionicons name="send" size={24} color={PRIMARY} />
+          <Ionicons name="send" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -525,19 +533,21 @@ const styles = StyleSheet.create({
 
   label: {
     fontWeight: "600",
-    marginBottom: 8
+    marginBottom: 8,
+    color: theme.colors.text
   },
 
   input: {
     height: 52,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
-    paddingHorizontal: 15
+    paddingHorizontal: 15,
+    color: theme.colors.text
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     marginTop: 10
   },
 
@@ -552,15 +562,15 @@ const styles = StyleSheet.create({
 
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: PRIMARY
+    borderBottomColor: theme.colors.primary
   },
 
   tabText: {
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   activeTabText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700"
   },
 
@@ -569,11 +579,12 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 10,
     fontWeight: "700",
-    fontSize: 18
+    fontSize: 18,
+    color: theme.colors.text
   },
 
   emptyText: {
-    color: "#888",
+    color: theme.colors.textMuted,
     marginHorizontal: 20,
     textAlign: "center",
     marginTop: 10
@@ -583,7 +594,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 15,
     height: 46,
@@ -601,16 +612,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0"
+    borderBottomColor: theme.colors.border
   },
 
   fileName: {
     fontWeight: "600",
-    color: "#111"
+    color: theme.colors.text
   },
 
   fileMeta: {
-    color: "#999",
+    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2
   },
@@ -626,7 +637,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#EDE9FE",
+    backgroundColor: theme.dark ? "#3B2E5C" : "#EDE9FE",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12
@@ -634,26 +645,27 @@ const styles = StyleSheet.create({
 
   avatarText: {
     fontWeight: "700",
-    color: PRIMARY
+    color: theme.colors.primary
   },
 
   memberName: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   memberRole: {
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   inviteRespondButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8
   },
 
   inviteDeclineButton: {
-    backgroundColor: "#FEE2E2"
+    backgroundColor: theme.dark ? "#4C1D1D" : "#FEE2E2"
   },
 
   inviteRespondButtonText: {
@@ -663,7 +675,7 @@ const styles = StyleSheet.create({
   },
 
   inviteDeclineButtonText: {
-    color: "#DC2626"
+    color: theme.colors.danger
   },
 
   inviteRow: {
@@ -675,19 +687,19 @@ const styles = StyleSheet.create({
 
   roleChip: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8
   },
 
   roleChipActive: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
   },
 
   roleChipText: {
-    color: "#666",
+    color: theme.colors.textMuted,
     fontSize: 12
   },
 
@@ -696,7 +708,7 @@ const styles = StyleSheet.create({
   },
 
   actionButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 52,
     marginHorizontal: 20,
     marginTop: 20,
@@ -719,22 +731,23 @@ const styles = StyleSheet.create({
 
   messageMine: {
     alignSelf: "flex-end",
-    backgroundColor: "#F3E8FF"
+    backgroundColor: theme.dark ? "#3B2E5C" : "#F3E8FF"
   },
 
   messageTheirs: {
     alignSelf: "flex-start",
-    backgroundColor: "#F3F4F6"
+    backgroundColor: theme.dark ? "#334155" : "#F3F4F6"
   },
 
   messageSender: {
     fontWeight: "700",
     fontSize: 12,
-    marginBottom: 2
+    marginBottom: 2,
+    color: theme.colors.text
   },
 
   messageText: {
-    color: "#111"
+    color: theme.colors.text
   },
 
   messageInputRow: {
@@ -743,7 +756,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#EEE",
+    borderTopColor: theme.colors.border,
     gap: 12
   },
 
@@ -751,8 +764,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 22,
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
+    color: theme.colors.text
   }
 });

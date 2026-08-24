@@ -12,6 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 import { isEmailFormat, isMobileFormat } from "../../utils/validators";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignUp">;
@@ -19,6 +21,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "SignUp">;
 export default function SignUpScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -69,7 +73,7 @@ export default function SignUpScreen({
           <MaterialCommunityIcons
             name="account-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -84,7 +88,7 @@ export default function SignUpScreen({
           <MaterialCommunityIcons
             name="email-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -101,7 +105,7 @@ export default function SignUpScreen({
           <MaterialCommunityIcons
             name="phone-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -117,7 +121,7 @@ export default function SignUpScreen({
           <MaterialCommunityIcons
             name="lock-outline"
             size={20}
-            color="#888"
+            color={theme.colors.textMuted}
           />
 
           <TextInput
@@ -165,27 +169,23 @@ export default function SignUpScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    paddingHorizontal: 24,
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 24
   },
 
   heading: {
     fontSize: 30,
     fontWeight: "700",
     textAlign: "center",
-    color: "#111827"
+    color: theme.colors.text
   },
 
   subHeading: {
     textAlign: "center",
-    color: "#6B7280",
+    color: theme.colors.textMuted,
     marginTop: 10,
     marginBottom: 40
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 15,
@@ -204,17 +204,18 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 15
+    fontSize: 15,
+    color: theme.colors.text
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     marginBottom: 15,
     textAlign: "center"
   },
 
   nextButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 56,
     borderRadius: 12,
     justifyContent: "center",
@@ -235,11 +236,11 @@ const styles = StyleSheet.create({
   },
 
   footerText: {
-    color: "#6B7280"
+    color: theme.colors.textMuted
   },
 
   loginText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700",
     marginLeft: 5
   }

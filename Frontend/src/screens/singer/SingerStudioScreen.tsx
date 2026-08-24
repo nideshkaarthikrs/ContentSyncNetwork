@@ -25,6 +25,8 @@ import { useTunePicker } from "../../hooks/tune/useTunePicker";
 import { useAnalyzePerformance } from "../../hooks/voice/useAnalyzePerformance";
 import { useUploadPerformance } from "../../hooks/voice/useUploadPerformance";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 import { preflightUpload } from "../../utils/uploadPreflight";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SingerStudio">;
@@ -34,6 +36,9 @@ export default function SingerStudioScreen({
   route
 }: Props) {
   useStopAudioOnBlur();
+
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
   const {
     selectedTune,
@@ -140,7 +145,7 @@ export default function SingerStudioScreen({
             <Feather
               name="arrow-left"
               size={22}
-              color="#111"
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -161,7 +166,7 @@ export default function SingerStudioScreen({
           style={styles.selector}
           onPress={openTuneModal}
         >
-          <Text>{selectedTune?.title ?? "Choose a tune"}</Text>
+          <Text style={styles.selectorText}>{selectedTune?.title ?? "Choose a tune"}</Text>
 
           <View style={styles.selectorRight}>
             {selectedTune && (
@@ -185,7 +190,7 @@ export default function SingerStudioScreen({
           style={styles.selector}
           onPress={() => selectedTune ? setLyricsModalOpen(true) : setError("Select a tune first.")}
         >
-          <Text>
+          <Text style={styles.selectorText}>
             {selectedLyrics ? selectedLyrics.title : "Choose lyrics"}
           </Text>
 
@@ -209,7 +214,7 @@ export default function SingerStudioScreen({
             <Feather
               name="upload"
               size={34}
-              color="#7C3AED"
+              color={theme.colors.primary}
             />
 
             <Text style={styles.actionText}>
@@ -236,7 +241,7 @@ export default function SingerStudioScreen({
             value={aiEnhance}
             onValueChange={setAiEnhance}
             trackColor={{
-              true: "#7C3AED"
+              true: theme.colors.primary
             }}
           />
         </View>
@@ -315,14 +320,10 @@ export default function SingerStudioScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -334,26 +335,32 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   stepTitle: {
     marginHorizontal: 20,
     marginTop: 20,
     marginBottom: 10,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   selector: {
     height: 52,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     marginHorizontal: 20,
     paddingHorizontal: 15,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center"
+  },
+
+  selectorText: {
+    color: theme.colors.text
   },
 
   selectorRight: {
@@ -372,7 +379,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 120,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center"
@@ -380,7 +387,8 @@ const styles = StyleSheet.create({
 
   actionText: {
     marginTop: 10,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   switchRow: {
@@ -392,17 +400,18 @@ const styles = StyleSheet.create({
   },
 
   switchTitle: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   switchDesc: {
-    color: "#666",
+    color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 4
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center",
     marginHorizontal: 20,
     marginTop: 20
@@ -412,10 +421,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     padding: 15,
-    backgroundColor: "#FAFAFA"
+    backgroundColor: theme.colors.surface
   },
 
   resultHeaderRow: {
@@ -427,12 +436,13 @@ const styles = StyleSheet.create({
 
   resultTitle: {
     fontWeight: "700",
-    fontSize: 15
+    fontSize: 15,
+    color: theme.colors.text
   },
 
   sampleBadge: {
     fontSize: 11,
-    color: "#9CA3AF",
+    color: theme.colors.textMuted,
     fontStyle: "italic"
   },
 
@@ -443,13 +453,13 @@ const styles = StyleSheet.create({
   },
 
   analysisItem: {
-    color: "#333",
+    color: theme.colors.text,
     fontSize: 13,
     minWidth: "45%"
   },
 
   submitButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 55,
     borderRadius: 10,
     justifyContent: "center",

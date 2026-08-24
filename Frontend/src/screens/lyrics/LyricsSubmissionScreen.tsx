@@ -19,6 +19,8 @@ import { useStopAudioOnBlur } from "../../hooks/useStopAudioOnBlur";
 import { useCreateLyrics } from "../../hooks/lyrics/useCreateLyrics";
 import { useGenerateLyrics } from "../../hooks/lyrics/useGenerateLyrics";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "LyricsSubmission">;
 
@@ -29,6 +31,9 @@ export default function LyricsSubmissionScreen({
   route
 }: Props) {
   useStopAudioOnBlur();
+
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
   const tuneId: string | undefined = route?.params?.tuneId;
   const tuneTitle: string = route?.params?.tuneTitle || "Untitled Tune";
@@ -100,7 +105,7 @@ export default function LyricsSubmissionScreen({
             <Feather
               name="arrow-left"
               size={22}
-              color="#111"
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -116,7 +121,7 @@ export default function LyricsSubmissionScreen({
         <Text style={styles.label}>Tune</Text>
 
         <View style={styles.readOnlyBox}>
-          <Text>{tuneTitle}</Text>
+          <Text style={styles.readOnlyText}>{tuneTitle}</Text>
 
           {tuneId && <TunePlayButton tuneId={tuneId} size="small" />}
         </View>
@@ -131,7 +136,7 @@ export default function LyricsSubmissionScreen({
           style={styles.dropdown}
           onPress={() => setLanguageModalOpen(true)}
         >
-          <Text>{language}</Text>
+          <Text style={styles.dropdownValue}>{language}</Text>
 
           <Feather
             name="chevron-down"
@@ -227,14 +232,10 @@ export default function LyricsSubmissionScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -246,20 +247,22 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   label: {
     marginHorizontal: 20,
     marginTop: 15,
     marginBottom: 8,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: theme.colors.text
   },
 
   readOnlyBox: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -268,10 +271,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 20
   },
 
+  readOnlyText: {
+    color: theme.colors.text
+  },
+
   dropdown: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     marginHorizontal: 20,
     paddingHorizontal: 15,
@@ -280,28 +287,34 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
 
+  dropdownValue: {
+    color: theme.colors.text
+  },
+
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     marginHorizontal: 20,
-    paddingHorizontal: 15
+    paddingHorizontal: 15,
+    color: theme.colors.text
   },
 
   lyricsBox: {
     minHeight: 220,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 10,
     marginHorizontal: 20,
-    padding: 15
+    padding: 15,
+    color: theme.colors.text
   },
 
   counter: {
     textAlign: "right",
     marginRight: 25,
-    color: "#777",
+    color: theme.colors.textMuted,
     marginTop: 5
   },
 
@@ -309,12 +322,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 6,
     fontSize: 12,
-    color: "#9CA3AF",
+    color: theme.colors.textMuted,
     fontStyle: "italic"
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center",
     marginHorizontal: 20,
     marginTop: 10
@@ -322,7 +335,7 @@ const styles = StyleSheet.create({
 
   secondaryButton: {
     borderWidth: 1,
-    borderColor: PRIMARY,
+    borderColor: theme.colors.primary,
     height: 52,
     borderRadius: 10,
     justifyContent: "center",
@@ -332,12 +345,12 @@ const styles = StyleSheet.create({
   },
 
   secondaryText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "600"
   },
 
   primaryButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 55,
     borderRadius: 10,
     justifyContent: "center",

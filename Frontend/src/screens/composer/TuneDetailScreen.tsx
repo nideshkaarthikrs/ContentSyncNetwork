@@ -19,6 +19,8 @@ import { useDeleteTune } from "../../hooks/tune/useDeleteTune";
 import { useTune } from "../../hooks/tune/useTune";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TuneDetail">;
 
@@ -27,6 +29,9 @@ export default function TuneDetailScreen({
   route
 }: Props) {
   useStopAudioOnBlur();
+
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
   const tuneId = route?.params?.tuneId;
   const { data: tune, isLoading, isError, error } = useTune(tuneId);
@@ -56,7 +61,7 @@ export default function TuneDetailScreen({
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, styles.centered]}>
-        <ActivityIndicator color={PRIMARY} size="large" />
+        <ActivityIndicator color={theme.colors.primary} size="large" />
       </SafeAreaView>
     );
   }
@@ -69,7 +74,7 @@ export default function TuneDetailScreen({
         </Text>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-          <Text style={{ color: PRIMARY, fontWeight: "700" }}>Go Back</Text>
+          <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -88,7 +93,7 @@ export default function TuneDetailScreen({
             <Feather
               name="arrow-left"
               size={22}
-              color="#111"
+              color={theme.colors.text}
             />
           </TouchableOpacity>
         </View>
@@ -108,7 +113,7 @@ export default function TuneDetailScreen({
                 <Feather
                   name="trash-2"
                   size={20}
-                  color="#DC2626"
+                  color={theme.colors.danger}
                 />
               </TouchableOpacity>
             )}
@@ -130,20 +135,20 @@ export default function TuneDetailScreen({
 
           <View style={styles.tagRow}>
             <View style={styles.tag}>
-              <Text>{tune.genre}</Text>
+              <Text style={styles.tagText}>{tune.genre}</Text>
             </View>
 
             <View style={styles.tag}>
-              <Text>{tune.mood}</Text>
+              <Text style={styles.tagText}>{tune.mood}</Text>
             </View>
 
             <View style={styles.tag}>
-              <Text>{tune.language}</Text>
+              <Text style={styles.tagText}>{tune.language}</Text>
             </View>
 
             {tune.bpm != null && (
               <View style={styles.tag}>
-                <Text>{tune.bpm} BPM</Text>
+                <Text style={styles.tagText}>{tune.bpm} BPM</Text>
               </View>
             )}
           </View>
@@ -203,14 +208,10 @@ export default function TuneDetailScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   centered: {
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center"
   },
 
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: theme.dark ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center"
   },
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 10
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
 
   coverPlaceholder: {
     height: 220,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     alignItems: "center"
   },
@@ -273,11 +274,12 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 28,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   role: {
-    color: "#777",
+    color: theme.colors.textMuted,
     marginTop: 6
   },
 
@@ -285,7 +287,8 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 10,
     fontWeight: "700",
-    fontSize: 18
+    fontSize: 18,
+    color: theme.colors.text
   },
 
   tagRow: {
@@ -295,7 +298,7 @@ const styles = StyleSheet.create({
   },
 
   tag: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: theme.dark ? theme.colors.border : "#F3F4F6",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -303,9 +306,13 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
 
+  tagText: {
+    color: theme.colors.text
+  },
+
   actionButton: {
     borderWidth: 1,
-    borderColor: PRIMARY,
+    borderColor: theme.colors.primary,
     borderRadius: 10,
     height: 52,
     justifyContent: "center",
@@ -314,7 +321,7 @@ const styles = StyleSheet.create({
   },
 
   actionText: {
-    color: PRIMARY,
+    color: theme.colors.primary,
     fontWeight: "700"
   }
 });

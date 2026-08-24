@@ -22,6 +22,8 @@ import { useMyProjects } from "../../hooks/project/useMyProjects";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ComposerDashboard">;
 
@@ -31,6 +33,9 @@ export default function ComposerDashboardScreen({
   navigation
 }: Props) {
   useStopAudioOnBlur();
+
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
   const { data, isLoading, isError, refetch } = useMyTunes(1, 5);
   const tunes = data?.tunes ?? [];
@@ -141,7 +146,7 @@ export default function ComposerDashboardScreen({
         </View>
 
         {isLoading && (
-          <ActivityIndicator style={{ marginTop: 20 }} color={PRIMARY} />
+          <ActivityIndicator style={{ marginTop: 20 }} color={theme.colors.primary} />
         )}
 
         {isError && !isLoading && (
@@ -170,7 +175,7 @@ export default function ComposerDashboardScreen({
             }
           >
             <View style={styles.tuneIconWrap}>
-              <Feather name="music" size={24} color={PRIMARY} />
+              <Feather name="music" size={24} color={theme.colors.primary} />
             </View>
 
             <View style={{ flex: 1 }}>
@@ -191,7 +196,7 @@ export default function ComposerDashboardScreen({
                 disabled={deleteTune.isPending}
                 style={styles.deleteIconBtn}
               >
-                <Feather name="trash-2" size={18} color="#DC2626" />
+                <Feather name="trash-2" size={18} color={theme.colors.danger} />
               </TouchableOpacity>
             </View>
 
@@ -207,18 +212,14 @@ export default function ComposerDashboardScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     paddingHorizontal: 20,
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "48%",
-    backgroundColor: "#FFF",
+    backgroundColor: theme.colors.surface,
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
@@ -261,17 +262,18 @@ const styles = StyleSheet.create({
   },
 
   cardLabel: {
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   cardValue: {
     marginTop: 8,
     fontWeight: "700",
-    fontSize: 22
+    fontSize: 22,
+    color: theme.colors.text
   },
 
   uploadBtn: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     height: 55,
     borderRadius: 12,
@@ -293,11 +295,12 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontWeight: "700",
-    fontSize: 18
+    fontSize: 18,
+    color: theme.colors.text
   },
 
   seeAll: {
-    color: PRIMARY
+    color: theme.colors.primary
   },
 
   tuneCard: {
@@ -312,14 +315,14 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 10,
     marginRight: 12,
-    backgroundColor: "#F3E8FF",
+    backgroundColor: theme.dark ? "#3B2E5C" : "#F3E8FF",
     justifyContent: "center",
     alignItems: "center"
   },
 
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: theme.colors.textMuted,
     marginTop: 20,
     paddingHorizontal: 20
   },
@@ -336,16 +339,17 @@ const styles = StyleSheet.create({
   },
 
   songName: {
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   songMeta: {
-    color: "#666",
+    color: theme.colors.textMuted,
     marginTop: 4
   },
 
   time: {
-    color: "#888",
+    color: theme.colors.textMuted,
     fontSize: 12
   }
 });

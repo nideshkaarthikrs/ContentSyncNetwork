@@ -5,16 +5,18 @@ import BusinessStack from "./BusinessStack";
 import CreatorStack from "./CreatorStack";
 import HomeStack from "./HomeStack";
 import { MainTabParamList } from "./types";
+import { useTheme } from "../theme/useTheme";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function BottomTabs() {
+  const theme = useTheme();
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#5B3DF5'
+        tabBarActiveTintColor: theme.colors.primary
       }}
     >
 

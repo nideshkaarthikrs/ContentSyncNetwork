@@ -3,8 +3,8 @@ import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 
 import { useTune } from "../../hooks/tune/useTune";
 import { useAudioPlayerStore } from "../../store/audioPlayerStore";
-
-const PRIMARY = "#7C3AED";
+import { useTheme } from "../../theme/useTheme";
+import { Theme } from "../../theme/theme";
 
 interface Props {
   tuneId: string;
@@ -13,6 +13,9 @@ interface Props {
 }
 
 export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   // Field-level selectors: this button renders inside FlatList rows (up to 50
   // in the tune picker), so a whole-store subscription would re-render every
   // row on each playback tick.
@@ -76,10 +79,11 @@ export default function TunePlayButton({ tuneId, audioUrl, size = "small" }: Pro
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: PRIMARY,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
+const getStyles = (theme: Theme) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: theme.colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+  });

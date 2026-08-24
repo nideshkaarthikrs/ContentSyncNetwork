@@ -231,8 +231,15 @@ const getStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12
   },
 
+  // Decorative negative/spend indicator text on top of `primary` (same card
+  // as `updated`, immediately above). `theme.colors.danger` was tried first
+  // but fails contrast against `primary` in both themes (it's designed to
+  // read against background/surface, not a primary-colored card) — branch
+  // to a dark red in dark mode (primary is a light lavender there) and keep
+  // the original light-salmon literal in light mode (primary is a deep
+  // purple there), matching the `updated` style's pattern on this card.
   spendLine: {
-    color: theme.colors.danger,
+    color: theme.dark ? "#7F1D1D" : "#FCA5A5",
     marginTop: 6,
     fontSize: 12,
     fontWeight: "600"

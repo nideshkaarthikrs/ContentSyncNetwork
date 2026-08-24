@@ -379,9 +379,7 @@ export default function SettingsPreferencesScreen({
 const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -437,8 +435,14 @@ const getStyles = (theme: Theme) => StyleSheet.create({
     alignItems: "center"
   },
 
+  // White label on the danger-colored button. Light theme's `danger`
+  // (#DC2626) gives white text ~5.9:1 contrast, but dark theme's `danger`
+  // (#F87171) is a light/pastel red -- white on it is only ~2.8:1, below
+  // the 3:1 floor even for this bold text. Branch to a dark red in dark
+  // mode (same approach as the primary-card literals elsewhere) to keep
+  // it legible; light mode keeps the original white.
   logoutText: {
-    color: "#FFFFFF",
+    color: theme.dark ? "#7F1D1D" : "#FFFFFF",
     fontWeight: "700"
   }
 });

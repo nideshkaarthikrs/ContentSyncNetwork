@@ -15,6 +15,8 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { Role } from "../../api/services/auth.api";
 import { useRegister } from "../../hooks/auth/useRegister";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RoleSelection">;
 
@@ -61,6 +63,8 @@ export default function RoleSelectionScreen({
   navigation,
   route
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const [selectedRoles, setSelectedRoles] = useState<
     string[]
   >([]);
@@ -113,7 +117,7 @@ export default function RoleSelectionScreen({
         <Feather
           name="arrow-left"
           size={22}
-          color="#111"
+          color={theme.colors.text}
         />
       </TouchableOpacity>
 
@@ -144,7 +148,7 @@ export default function RoleSelectionScreen({
                 <MaterialCommunityIcons
                   name={item.icon as any}
                   size={24}
-                  color="#7C3AED"
+                  color={theme.colors.primary}
                 />
 
                 <Text style={styles.roleName}>
@@ -191,15 +195,11 @@ export default function RoleSelectionScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    paddingHorizontal: 20,
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 20
   },
 
   backBtn: {
@@ -210,12 +210,13 @@ const styles = StyleSheet.create({
     marginTop: 25,
     fontSize: 28,
     fontWeight: "700",
-    textAlign: "center"
+    textAlign: "center",
+    color: theme.colors.text
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#777",
+    color: theme.colors.textMuted,
     marginTop: 8
   },
 
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
   roleName: {
     marginLeft: 15,
     fontSize: 16,
-    color: "#111"
+    color: theme.colors.text
   },
 
   checkbox: {
@@ -242,24 +243,24 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center"
   },
 
   checkboxSelected: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
   },
 
   errorText: {
-    color: "#DC2626",
+    color: theme.colors.danger,
     textAlign: "center",
     marginBottom: 15
   },
 
   continueButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     height: 55,
     borderRadius: 12,
     justifyContent: "center",
@@ -267,6 +268,8 @@ const styles = StyleSheet.create({
     marginBottom: 25
   },
 
+  // White label on the primary-colored button; kept literal per the
+  // white-on-primary exception.
   continueText: {
     color: "#FFF",
     fontWeight: "700",

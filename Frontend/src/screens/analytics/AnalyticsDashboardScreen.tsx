@@ -16,12 +16,16 @@ import { useMyRightsListings } from "../../hooks/rights/useMyRightsListings";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AnalyticsDashboard">;
 
 export default function AnalyticsDashboardScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const userId = useAuthStore((state) => state.user?.userId);
   const { data: revenue, isLoading: revenueLoading } = useRevenueDashboard();
   const { data: profile, isLoading: profileLoading } = useProfile(userId);
@@ -43,6 +47,7 @@ export default function AnalyticsDashboardScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -54,7 +59,7 @@ export default function AnalyticsDashboardScreen({
         </View>
 
         {isLoading ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color="#7C3AED" />
+          <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
         ) : (
           <>
             {/* Overview */}
@@ -130,17 +135,22 @@ const Metric = ({
 }: {
   title: string;
   value: string;
-}) => (
-  <View style={styles.metricCard}>
-    <Text style={styles.metricValue}>
-      {value}
-    </Text>
+}) => {
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
-    <Text style={styles.metricTitle}>
-      {title}
-    </Text>
-  </View>
-);
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricValue}>
+        {value}
+      </Text>
+
+      <Text style={styles.metricTitle}>
+        {title}
+      </Text>
+    </View>
+  );
+};
 
 const TuneRow = ({
   title,
@@ -148,21 +158,22 @@ const TuneRow = ({
 }: {
   title: string;
   plays: string;
-}) => (
-  <View style={styles.row}>
-    <Text>{title}</Text>
-    <Text>{plays}</Text>
-  </View>
-);
+}) => {
+  const theme = useTheme();
+  const styles = getStyles(theme);
 
-const PRIMARY = "#7C3AED";
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowText}>{title}</Text>
+      <Text style={styles.rowText}>{plays}</Text>
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -174,26 +185,36 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   heroCard: {
     margin: 20,
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     borderRadius: 18,
     padding: 24
   },
 
+  // Muted label on the primary card. `#DDD` reads fine against the light
+  // theme's deep-purple `primary` but drops to ~2:1 contrast against the
+  // dark theme's lighter-purple `primary` -- branch to a deep purple there
+  // (same value used for this exact card-on-primary problem elsewhere,
+  // e.g. WalletPaymentsScreen's `updated` style).
   heroLabel: {
-    color: "#DDD"
+    color: theme.dark ? "#4C1D95" : "#DDD"
   },
 
+  // White label on the primary card; kept literal per the white-on-primary
+  // exception.
   heroValue: {
     color: "#FFF",
     fontSize: 34,
     fontWeight: "700"
   },
 
+  // White label on the primary card; kept literal per the white-on-primary
+  // exception.
   heroGrowth: {
     color: "#FFF",
     marginTop: 5
@@ -206,9 +227,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 20
   },
 
+  // Decorative light-purple card fill; no matching theme token, so branch
+  // to a deep purple in dark mode to keep the text on it legible (same
+  // pattern as WalletPaymentsScreen's `actionButton`).
   metricCard: {
     width: "48%",
-    backgroundColor: "#F5F3FF",
+    backgroundColor: theme.dark ? "#3B2A5A" : "#F5F3FF",
     padding: 18,
     borderRadius: 12,
     marginBottom: 12
@@ -216,11 +240,12 @@ const styles = StyleSheet.create({
 
   metricValue: {
     fontSize: 22,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   metricTitle: {
-    color: "#666",
+    color: theme.colors.textMuted,
     marginTop: 4
   },
 
@@ -229,13 +254,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     fontSize: 18,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   card: {
     marginHorizontal: 20,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: theme.colors.border,
     borderRadius: 12,
     padding: 15
   },
@@ -244,5 +270,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 10
+  },
+
+  rowText: {
+    color: theme.colors.text
   }
 });

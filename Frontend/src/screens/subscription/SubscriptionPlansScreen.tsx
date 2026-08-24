@@ -16,6 +16,8 @@ import { getErrorMessage } from "../../api/getErrorMessage";
 import { SubscriptionPlan } from "../../api/services/payment.api";
 import { useSubscribe } from "../../hooks/payment/useSubscribe";
 import { RootStackParamList } from "../../navigation/types";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SubscriptionPlans">;
 
@@ -67,6 +69,8 @@ const plans: {
 export default function SubscriptionPlansScreen({
   navigation
 }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const [selectedPlan, setSelectedPlan] =
     useState<SubscriptionPlan>("PREMIUM");
   // Session-local only: there is no GET endpoint for subscription status, so this
@@ -100,6 +104,7 @@ export default function SubscriptionPlansScreen({
             <Feather
               name="arrow-left"
               size={22}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
@@ -177,7 +182,7 @@ export default function SubscriptionPlansScreen({
                     <MaterialCommunityIcons
                       name="check-circle"
                       size={18}
-                      color="#10B981"
+                      color={theme.colors.success}
                     />
 
                     <Text
@@ -214,14 +219,10 @@ export default function SubscriptionPlansScreen({
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -233,49 +234,56 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
+  // Decorative light-purple card fill; no matching theme token, so branch
+  // to a deep purple in dark mode to keep the text on it legible (same
+  // pattern as WalletPaymentsScreen's `actionButton`).
   currentPlanCard: {
     marginHorizontal: 20,
-    backgroundColor: "#F5F3FF",
+    backgroundColor: theme.dark ? "#3B2A5A" : "#F5F3FF",
     borderRadius: 16,
     padding: 20
   },
 
   currentLabel: {
-    color: "#666"
+    color: theme.colors.textMuted
   },
 
   currentPlan: {
     fontSize: 22,
     fontWeight: "700",
-    marginTop: 5
+    marginTop: 5,
+    color: theme.colors.text
   },
 
   planCard: {
     marginHorizontal: 20,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: theme.colors.border,
     borderRadius: 16,
     padding: 20
   },
 
   selectedCard: {
-    borderColor: PRIMARY,
+    borderColor: theme.colors.primary,
     borderWidth: 2
   },
 
   popularBadge: {
     alignSelf: "flex-start",
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 20,
     marginBottom: 10
   },
 
+  // White label on the primary-colored badge; kept literal per the
+  // white-on-primary exception.
   popularText: {
     color: "#FFF",
     fontSize: 11,
@@ -284,13 +292,14 @@ const styles = StyleSheet.create({
 
   planTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   planPrice: {
     fontSize: 26,
     fontWeight: "700",
-    color: PRIMARY,
+    color: theme.colors.primary,
     marginVertical: 10
   },
 
@@ -301,11 +310,12 @@ const styles = StyleSheet.create({
   },
 
   featureText: {
-    marginLeft: 10
+    marginLeft: 10,
+    color: theme.colors.text
   },
 
   upgradeButton: {
-    backgroundColor: PRIMARY,
+    backgroundColor: theme.colors.primary,
     marginHorizontal: 20,
     marginTop: 25,
     height: 55,
@@ -314,6 +324,8 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
 
+  // White label on the primary-colored button; kept literal per the
+  // white-on-primary exception.
   upgradeText: {
     color: "#FFF",
     fontWeight: "700",

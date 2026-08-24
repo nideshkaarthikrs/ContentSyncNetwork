@@ -18,6 +18,8 @@ import { useUpdateProfile } from "../../hooks/profile/useUpdateProfile";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../store/authStore";
 import { useToastStore } from "../../store/toastStore";
+import { Theme } from "../../theme/theme";
+import { useTheme } from "../../theme/useTheme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DefaultRole">;
 
@@ -31,6 +33,8 @@ const ROLE_ICON: Record<string, string> = {
 };
 
 export default function DefaultRoleScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
   const userId = useAuthStore((state) => state.user?.userId);
   const { data: profile, isLoading } = useProfile(userId);
   const updateProfile = useUpdateProfile(userId);
@@ -61,14 +65,14 @@ export default function DefaultRoleScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={22} />
+          <Feather name="arrow-left" size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Default Role</Text>
         <View style={{ width: 22 }} />
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#7C3AED" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
       ) : (
         <FlatList
           data={profile?.roles ?? []}
@@ -82,7 +86,7 @@ export default function DefaultRoleScreen({ navigation }: Props) {
                   <MaterialCommunityIcons
                     name={(ROLE_ICON[item] ?? "account") as any}
                     size={24}
-                    color="#7C3AED"
+                    color={theme.colors.primary}
                   />
                   <Text style={styles.roleName}>{item}</Text>
                 </View>
@@ -99,14 +103,10 @@ export default function DefaultRoleScreen({ navigation }: Props) {
   );
 }
 
-const PRIMARY = "#7C3AED";
-
-const styles = StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
-    marginTop: 36,
-    marginBottom: 50
+    backgroundColor: theme.colors.background
   },
 
   header: {
@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700"
+    fontWeight: "700",
+    color: theme.colors.text
   },
 
   roleCard: {
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE"
+    borderBottomColor: theme.colors.border
   },
 
   roleLeft: {
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   roleName: {
     marginLeft: 15,
     fontSize: 16,
-    color: "#111"
+    color: theme.colors.text
   },
 
   radio: {
@@ -146,25 +147,25 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center"
   },
 
   radioSelected: {
-    borderColor: PRIMARY
+    borderColor: theme.colors.primary
   },
 
   radioDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: PRIMARY
+    backgroundColor: theme.colors.primary
   },
 
   emptyText: {
     textAlign: "center",
     marginTop: 40,
-    color: "#777"
+    color: theme.colors.textMuted
   }
 });
